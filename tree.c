@@ -24,20 +24,11 @@ double Tree_GetG(void)
 
 void Echange(Part *a, Part *b)
 {
-//*
 	Part tmp;
 
 	memcpy(&tmp, a, sizeof(Part));
 	memcpy(a,    b, sizeof(Part));
 	memcpy(b, &tmp, sizeof(Part));
-// */
-/*
-	Part *tmp;
-
-	tmp = a;
-	a   = b;
-	b   = tmp;
-// */
 /*	Part tmp;
 
 	tmp.x  = a->x;
@@ -186,12 +177,11 @@ void Tree_Free(TNoeud root)
 
 void Tree_Calc(TNoeud t1, const int NbPart)
 {
-#ifdef TREE_CM_BUILD
-			t1->CM    = 0.0;
-			t1->cm.x  = 0.0;
-			t1->cm.y  = 0.0;
-			t1->cm.z  = 0.0;
-#endif
+	t1->CM    = 0.0;
+	t1->cm.x  = 0.0;
+	t1->cm.y  = 0.0;
+	t1->cm.z  = 0.0;
+
 	for(int i = 0; i < NbPart; i++)
 	{
 #ifdef P_DBG_TREECODE_P_CALC
@@ -211,12 +201,10 @@ void Tree_Calc(TNoeud t1, const int NbPart)
 		  )
 		{
 			Echange(&t1->first[t1->N], &t1->first[i]);
-#ifdef TREE_CM_BUILD
 			t1->CM   += t1->first[t1->N].m;
 			t1->cm.x += t1->first[t1->N].x;
 			t1->cm.y += t1->first[t1->N].y;
 			t1->cm.z += t1->first[t1->N].z;
-#endif
 			t1->N++;
 #ifdef P_DBG_TREECODE_P_CALC
 			//for(int j = 0; j<=t1->level; j++) fprintf(stderr, " ");
@@ -224,7 +212,7 @@ void Tree_Calc(TNoeud t1, const int NbPart)
 #endif
 		}
 	}
-#ifdef TREE_CM_BUILD
+
 	if( t1->N != 0 )
 	{
 		t1->cm.x /= t1->N;
@@ -234,7 +222,6 @@ void Tree_Calc(TNoeud t1, const int NbPart)
 		fprintf(stderr, "\033[35mCM :: (%g, %g, %g) ; %g (N == %d)\033[00m\n", t1->x, t1->y, t1->z, t1->CM, t1->N);
 #endif
 	}
-#endif
 }
 
 TNoeud tmp_Build2(TNoeud root, int NbPart, int bro)
@@ -332,7 +319,6 @@ int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 	}
 
 #ifdef P_DBG_TREECODE_P_CALC2
-	//for(int i = 0; i<=root->level; i++) fprintf(stderr, " ");
 	fprintf(stderr, "\033[32m|-%s:: t1->N = %d ; deb = %d ; NbPart = %d, NbMin = %d\033[00m\n", __func__, t1->N, 0, NbPart, NbMin);
 #endif
 
@@ -358,7 +344,6 @@ int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 		}
 
 #ifdef P_DBG_TREECODE_P_CALC2
-		//for(int i = 0; i<=root->level; i++) fprintf(stderr, " ");
 		fprintf(stderr, "\033[32m|-%s:: t%d->N = %d ; deb = %d ; NbPart = %d, NbMin = %d\033[00m\n", __func__, bro + 1, t1->N, Nb_use, NbPart, NbMin);
 #endif
 
@@ -398,14 +383,15 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 	for(int i=0; i<N; i++)
 	{
 		di[i].r = sqrt(   pow( (NEAREST( (insert[i].x - part->x), (BS/2.0), BS )), 2.0 ) +
-				pow( (NEAREST( (insert[i].y - part->y), (BS/2.0), BS )), 2.0 ) +
-				pow( (NEAREST( (insert[i].z - part->z), (BS/2.0), BS )), 2.0 )
+				  pow( (NEAREST( (insert[i].y - part->y), (BS/2.0), BS )), 2.0 ) +
+				  pow( (NEAREST( (insert[i].z - part->z), (BS/2.0), BS )), 2.0 )
 			    );
 		di[i].id = insert[i].id;
 #ifdef __DEBUG_CALCVOIS_TREECODE_P__
 		fprintf(stderr, "\033[36m%s::di :: %.16g (%.16g)\033[00m\n", __func__, di[i].r, Tab[NbVois - 1].r);
 #endif
 		// Il faut conserver le tableau ordonné, ou on fait un qsort après la boucle :
+#ifndef USE_VOIS_QSORT
 		for (int j = N-2; j > 0; j--)
 		{
 			if( di[j].r > di[j+1].r )
@@ -417,7 +403,11 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 			else
 				break;
 		}
+#endif
 	}
+#ifdef USE_VOIS_QSORT
+	qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
+#endif
 
 	for(int i=0; i<N; i++)
 	{
@@ -431,6 +421,9 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 					Tab[NbVois - 1].r);
 #endif
 			//On garde le tableau des voisins ordonné :
+#ifdef USE_VOIS_QSORT
+			qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
+#else
 			for (int j = NbVois-2; j > 0; j--)
 			{
 				if( Tab[j].r > Tab[j+1].r )
@@ -442,6 +435,7 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 				else
 					break;
 			}
+#endif
 		}
 		else if( di[i].r > Tab[NbVois - 1].r )
 			break;
@@ -500,49 +494,21 @@ inline double Tree_Dist(const TNoeud root, const Part *part, const double BS)
 	       d2 = 0.0,
 	       dx = 0.0,
 	       dy = 0.0,
-	       dz = 0.0;
+	       dz = 0.0,
+	       d  = 0.0;
 
-	d1 = part->x - (root->x - root->cote/2.0);
-	d2 = part->x - (root->x + root->cote/2.0);
-	d1 = NEAREST(d1, (BS/2.0), BS);
-	d2 = NEAREST(d2, (BS/2.0), BS);
+	//Faire par rapport au centre. max d-cote/2, 0
+	d  = part->x - root->x;
+	d  = NEAREST(d, (BS/2.0), BS);
+	dx = fmax( fmin(d, d - root->cote/2.0), 0.0);
 
-#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-	fprintf(stderr, "\033[33m%s:: d1 = %g ; d2 = %g \t[[%g, %g +/- %g]]\033[00m\n", __func__, d1, d2, part->x, root->x, root->cote/2.0);
-#endif
+	d  = part->x - root->x;
+	d  = NEAREST(d, (BS/2.0), BS);
+	dy = fmax( fmin(d, d - root->cote/2.0), 0.0);
 
-	if( d1 > 0.0 && d2 <= 0.0 )
-		dx = 0.0;
-	else
-		dx = fmin(fabs(d1), fabs(d2));
-
-	d1 = part->y - (root->y - root->cote/2.0);
-	d2 = part->y - (root->y + root->cote/2.0);
-	d1 = NEAREST(d1, (BS/2.0), BS);
-	d2 = NEAREST(d2, (BS/2.0), BS);
-
-#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-	fprintf(stderr, "\033[33m%s:: d1 = %g ; d2 = %g \t[[%g, %g +/- %g]]\033[00m\n", __func__, d1, d2, part->y, root->y, root->cote/2.0);
-#endif
-
-	if( d1 > 0.0 && d2 <= 0.0 )
-		dy = 0.0;
-	else
-		dy = fmin(fabs(d1), fabs(d2));
-
-	d1 = part->z - (root->z - root->cote/2.0);
-	d2 = part->z - (root->z + root->cote/2.0);
-	d1 = NEAREST(d1, (BS/2.0), BS);
-	d2 = NEAREST(d2, (BS/2.0), BS);
-
-#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-	fprintf(stderr, "\033[33m%s:: d1 = %g ; d2 = %g \t[[%g, %g +/- %g]]\033[00m\n", __func__, d1, d2, part->z, root->z, root->cote/2.0);
-#endif
-
-	if( d1 > 0.0 && d2 <= 0.0 )
-		dz = 0.0;
-	else
-		dz = fmin(fabs(d1), fabs(d2));
+	d  = part->x - root->x;
+	d  = NEAREST(d, (BS/2.0), BS);
+	dz = fmax( fmin(d, d - root->cote/2.0), 0.0);
 
 	return sqrt(dx*dx + dy*dy + dz*dz);
 }

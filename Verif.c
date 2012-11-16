@@ -140,6 +140,21 @@ Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS)
 	return root->first[ind];
 }
 
+TNoeud Create_Tree(Part *posvits, const int NbPart, const int NbMin, const Part Center, const double taille)
+{
+	TNoeud root = NULL;
+	root        = Tree_Init(NbPart, Center.x, Center.y, Center.z, taille);
+	if( root == NULL )
+		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
+	root->first = posvits;
+
+	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
+
+	Tree_Build2(root, NbPart, NbMin);
+
+	return root;
+}
+
 Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, const int NbMin, const double BoxSize)
 {
 	/****************************************************************\
@@ -182,19 +197,30 @@ Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, co
 #else
 	Center         = MoreDenseParticule(root, NbVois, BoxSize);
 #endif
-//	Tree_Free(root), root = NULL;
-//	root           = Tree_Init(NbPart, BoxSize /2.0, BoxSize /2.0, BoxSize /2.0, taille);
-//	if( root == NULL )
-//		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-//
-//	root->first = posvits;
-//	Tree_Build2(root, NbPart, NbMin);
-//
-//#ifdef __DEBUG_VOIS_LOG
-//	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre.log");
-//#else
-//	Center         = MoreDenseParticule(root, NbVois, BoxSize);
-//#endif
+
+	for (int i = 0; i < NbPart; i++)
+	{
+		int j;
+		do {
+			j = rand()%NbPart;
+		}while( j == i );
+		Part  tmp  = posvits[i];
+		posvits[i] = posvits[j];
+		posvits[j] = tmp;
+	}
+	Tree_Free(root), root = NULL;
+	root           = Tree_Init(NbPart, BoxSize /2.0, BoxSize /2.0, BoxSize /2.0, taille);
+	if( root == NULL )
+		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
+
+	root->first = posvits;
+	Tree_Build2(root, NbPart, NbMin);
+
+#ifdef __DEBUG_VOIS_LOG
+	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre-Manuel.log");
+#else
+	Center         = MoreDenseParticule(root, NbVois, BoxSize);
+#endif
 #ifdef USE_TIMER2
 	finish = clock();
 	time(&t2);
