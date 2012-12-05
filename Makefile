@@ -3,7 +3,7 @@
 ########################################################
 
 #!|-----------------------------------------------------|
-#!|			Variables			|
+#!|		Variables de compilations		|
 #!|-----------------------------------------------------|
 
 #!CC :
@@ -19,6 +19,14 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
 #-ggdb -Wmissing-declarations
 EXTRA=-pg
 #-pg
+
+INC=-I $$HOME/.C_C++/include -I $$HOME/.local/include -I include/
+LFLAG=-L $$HOME/.C_C++/lib -I $$HOME/.local/lib
+LINK=-lm
+
+#!|-----------------------------------------------------|
+#!|		   Variables de debug			|
+#!|-----------------------------------------------------|
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
@@ -38,7 +46,10 @@ TIMER=-DUSE_TIMER
 
 DEBUG+=-D__DEBUG_VOIS_LOG
 DEBUG+=-DUSE_STRUCT_PART
-DEBUG+=-DTREE_CM_BUILD
+#DEBUG+=-DTREE_CM_BUILD
+#DEBUG+=-DUSE_VOIS_QSORT
+DEBUG+=-DTEST_VOISIN_LOG_SHUFFLE
+DEBUG+=-DTEST_INFLUENCE_MODIF_MARCHE_ARBRE
 
 ifeq ($(IOPERSO),1)
 DEBUG+=-DIO_PERSO
@@ -49,14 +60,23 @@ endif
 #-DP_DBG_TREECODE_P_CALC
 #-DP_DBG_TREECODE_P -DP_DBG_TREECODE_P_CALC
 
-INC=-I $$HOME/.C_C++/include -I $$HOME/.local/include
-LFLAG=-L $$HOME/.C_C++/lib -I $$HOME/.local/lib
-LINK=-lm
+#!|-----------------------------------------------------|
+#!|		  Variables de dossiers			|
+#!|-----------------------------------------------------|
 
 #!PREFIX :
 #!	Dossier dans lequel sera installé le programme.
 #!
 PREFIX=$$HOME/.local/
+
+SRCDIR=src/
+INCDIR=include/
+OBJDIR=build/
+EXECDIR=build/
+
+#!|-----------------------------------------------------|
+#!|		Variables d'Éxecutable			|
+#!|-----------------------------------------------------|
 
 ########################################################
 #	Executable divers :
@@ -96,12 +116,12 @@ HEADERS=$(SRC:.c=.h)
 #!EXEC :
 #!	Nom de l'éxecutable principale (défaut : Verif).
 #!
-EXEC=$(MAIN:.c=)
+EXEC=$(EXECDIR)/$(MAIN:.c=)
 
 #!EXEC2 :
 #!	Nom de l'éxecutable brute-force.
 #!
-EXEC2=$(MAIN2:.c=)
+EXEC2=$(EXECDIR)/$(MAIN2:.c=)
 
 #!|-----------------------------------------------------|
 #!|			Cibles				|
@@ -119,10 +139,10 @@ all-single:$(EXEC)
 #!
 all:$(EXEC) $(EXEC2)
 
-$(MAIN:.c=.o):$(MAIN)
+$(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN)
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
 
-$(MAIN2:.c=.o):$(MAIN2)
+$(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2)
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
 
 tree_create.o:tree_create.c tree.h
@@ -131,14 +151,14 @@ tree_create.o:tree_create.c tree.h
 tree_voisin.o:tree_voisin.c tree.h
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
 
-%.o:%.c %.h
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
+$(OBJDIR)/%.o:$(SRCDIR)/%.c $(INCDIR)/$(HEA)
+	$(CC) $(CFLAG) $(INC) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) -c $< -o $@
 
-$(EXEC): $(MAIN:.c=.o) $(OBJ) $(HEADERS)
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $(OBJ) $(MAIN:.c=.o) -o $@ $(LINK)
+$(EXEC):$(OBJDIR)/$(MAIN:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
+	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $^ -o $@ $(LINK)
 
-$(EXEC2): $(MAIN2:.c=.o) $(OBJ) $(HEADERS)
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $(OBJ) $(MAIN2:.c=.o) -o $@ $(LINK)
+$(EXEC2):$(OBJDIR)/$(MAIN2:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
+	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $^ -o $@ $(LINK)
 
 test_temp:
 	$(CC)  $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) ../Tree_Code/rand.c utils.c tree.c Verif_tools.c types.c test_Temp.c -o $(LFLAG) test_temp  $(LINK)
@@ -171,7 +191,9 @@ gdb: $(EXEC)
 #!	Installe le programme dans $PREFIX/bin.
 #!
 install:$(EXEC)
-	@mkdir -p $(PREFIX)/bin && cp $(EXEC) $(PREFIX)/bin/.
+	@mkdir -p $(PREFIX)/bin
+	@install -m 755 $(EXEC) $(PREFIX)/bin
+#@mkdir -p $(PREFIX)/bin && cp $(EXEC) $(PREFIX)/bin/.
 
 ########################################################
 #	Archivage :
@@ -180,7 +202,7 @@ install:$(EXEC)
 #!	Compresse les sources dans une archive tar.gz.
 #!
 tar:
-	@$(TAR) $(CTAR).$(EXTT) $(SRC) $(MAIN) $(HEADERS) Makefile cte_phys.h
+	@$(TAR) $(CTAR).$(EXTT) $(foreach x, $(SRC), $(SRCDIR)/$(x)) $(SRCDIR)/$(MAIN) $(foreach x, $(HEADERS), $(INCDIR)/$(x)) Makefile $(INCDIR)/cte_phys.h
 
 ########################################################
 #	Documentation :
@@ -197,7 +219,7 @@ doc:
 #!	Nettoie les fichiers objets et back-up.
 #!
 clean:
-	$(RM) -rf *.o *.c~
+	$(RM) -rf $(OBJDIR)/*.o $(SRCDIR)/*.c~
 
 #!clean-all :
 #!	Nettoie tout : fichiers objets, back-up, documentation, éxecutable, ...
