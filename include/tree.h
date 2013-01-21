@@ -105,6 +105,7 @@ void Tree_Calc(TNoeud t1, const int NbPart);
  */
 int    Tree_Build2(TNoeud root, int NbPart, int NbMin);
 
+#ifdef PERIODIC
 /**
  * Fonction de calcul des voisins par défaut, version 3d.
  * @param *insert Tableau contenant les particules à insérer.
@@ -114,7 +115,19 @@ int    Tree_Build2(TNoeud root, int NbPart, int NbMin);
  * @param *part Particule dont on cherche les voisins
  */
 void   CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part *part, const double BS);
+#else
+/**
+ * Fonction de calcul des voisins par défaut, version 3d.
+ * @param *insert Tableau contenant les particules à insérer.
+ * @param N Taille du tableau contenant les particules à insérer.
+ * @param *Tab Tableau dans lequel on souhaite insérer les particules de *insert si possible.
+ * @param NbVois Taille du second tableau
+ * @param *part Particule dont on cherche les voisins
+ */
+void   CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part *part);
+#endif
 
+#ifdef PERIODIC
 /**
  * Fonction parcourant le tree-code pour en calculer les voisins.
  * \todo Généraliser cette fonction pour une utilisation plus générale,
@@ -127,6 +140,20 @@ void   CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Pa
  * @param *part Particule dont on veut les voisins.
  */
 void   Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part, const double BS);
+#else
+/**
+ * Fonction parcourant le tree-code pour en calculer les voisins.
+ * \todo Généraliser cette fonction pour une utilisation plus générale,
+ * comme pour le potentiel.
+ * \todo Rendre périodique le calcul.
+ * @param root Nœud racine à partir duquel parcourir l'arbre.
+ * @param *Tab Tableau contenant les voisins (il doit être initialisé
+ * avec des particules, sans critére de choix particulier).
+ * @param NbVois Nombre de voisin.
+ * @param *part Particule dont on veut les voisins.
+ */
+void   Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part);
+#endif
 
 /**
  * Fonction sauvegardant l'arbre dans un fichier.
@@ -150,6 +177,17 @@ int    Tree_Read (TNoeud root, FILE *fich);
  */
 void   Tree_Free (TNoeud root);
 
+#ifdef PERIODIC
+/**
+ * Fonction se servant du Tree-Code pour calculer le potentiel.
+ * @param root noeud à partir duquel commencer le calcul (racine de l'arbre).
+ * @param *part Tableau de particule (sais plus à quoi il sert).
+ * @param accept Critère d'acceptation des particules (angle d'ouverture du Tree Code).
+ * @param BS Taille de la boîte.
+ * @param soft Softening à appliquer lors du calcul du potentiel.
+ */
+double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const double soft, const double BS);
+#else
 /**
  * Fonction se servant du Tree-Code pour calculer le potentiel.
  * @param root noeud à partir duquel commencer le calcul (racine de l'arbre).
@@ -157,7 +195,8 @@ void   Tree_Free (TNoeud root);
  * @param accept Critère d'acceptation des particules (angle d'ouverture du Tree Code).
  * @param soft Softening à appliquer lors du calcul du potentiel.
  */
-double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const double soft, const double BS);
+double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const double soft);
+#endif
 
 void Tree_SetG(double nG);
 double Tree_GetG(void);

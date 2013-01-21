@@ -343,7 +343,11 @@ int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 	return 1;
 }
 
+#ifdef PERIODIC
 void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part *part, const double BS)
+#else
+void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part *part)
+#endif
 {
 #ifdef __DEBUG_CALCVOIS_TREECODE_P__
 	fprintf(stderr, "\033[35m%s:: Vérification :: (%d, %d)\033[00m\n", __func__, N, NbVois);
@@ -353,10 +357,17 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 	//Calcul des distances :
 	for(int i=0; i<N; i++)
 	{
+#ifdef PERIODIC
 		di[i].r  = sqrt(  pow( (NEAREST( (insert[i].x - part->x), (BS/2.0), BS )), 2.0 ) +
 				  pow( (NEAREST( (insert[i].y - part->y), (BS/2.0), BS )), 2.0 ) +
 				  pow( (NEAREST( (insert[i].z - part->z), (BS/2.0), BS )), 2.0 )
 			    );
+#else
+		di[i].r  = sqrt(  pow( (insert[i].x - part->x), 2.0 ) +
+				  pow( (insert[i].y - part->y), 2.0 ) +
+				  pow( (insert[i].z - part->z), 2.0 )
+			    );
+#endif
 		di[i].id = insert[i].id;
 //		if( part->id == 14909 && di[i].id == 0 ) fprintf(stderr, "\033[31mAïe !!!!!\033[00m\n");
 #ifdef __DEBUG_CALCVOIS_TREECODE_P__
@@ -445,51 +456,8 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 //	}
 	free(di);
 }
-//{
-//#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-//	fprintf(stderr, "\033[35m%s:: Vérification :: (%d, %d)\033[00m\n", __func__, N, NbVois);
-//#endif
-//	for(int i=0; i<N; i++)
-//	{
-//		double dx = insert[i].x - part->x,
-//		       dy = insert[i].y - part->y,
-//		       dz = insert[i].z - part->z;
-//		dx = NEAREST(dx, BS/2.0, BS);
-//		dy = NEAREST(dy, BS/2.0, BS);
-//		dz = NEAREST(dz, BS/2.0, BS);
-//		double di = sqrt( pow(dx, 2.0) + pow(dy, 2.0) + pow(dz, 2.0));
-//#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-//		fprintf(stderr, "\033[36m%s::di :: %.16g (%.16g)\033[00m\n", __func__, di, Tab[NbVois - 1].r);
-//#endif
-//		if( di < Tab[NbVois - 1].r && insert[i].id != part->id && NotIn(insert[i], Tab, NbVois) )
-//		{
-//			//memcpy(&Tab[NbVois - 1], &insert[i], sizeof(Part));
-//			Tab[NbVois - 1].x  = insert[i].x;
-//			Tab[NbVois - 1].y  = insert[i].y;
-//			Tab[NbVois - 1].z  = insert[i].z;
-//			Tab[NbVois - 1].r  = di;
-//#ifdef __DEBUG_CALCVOIS_TREECODE_P__
-//			fprintf(stderr, "\033[38m%s::selection :: %.16g %.16g %.16g (%.16g)\033[00m\n",
-//					__func__,
-//					Tab[NbVois - 1].x,
-//					Tab[NbVois - 1].y,
-//					Tab[NbVois - 1].z,
-//					Tab[NbVois - 1].r);
-//#endif
-//			//qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
-//			for (int j = NbVois-2; j > 0; j--)
-//			{
-//				if( Tab[j].r > Tab[j+1].r )
-//				{
-//					Part tmp = Tab[j];
-//					Tab[j]   = Tab[j+1];
-//					Tab[j+1] = tmp;
-//				}
-//			}
-//		}
-//	}
-//}
 
+#ifdef PERIODIC
 inline double Tree_Dist(const TNoeud root, const Part *part, const double BS)
 {
 	// Calcul des distances particules--cube :
@@ -519,8 +487,48 @@ inline double Tree_Dist(const TNoeud root, const Part *part, const double BS)
 
 	return sqrt(dx*dx + dy*dy + dz*dz);
 }
+#else
+inline double Tree_Dist(const TNoeud root, const Part *part)
+{
+	double dx = 0.0,
+	       dy = 0.0,
+	       dz = 0.0,
+	       d1 = 0.0,
+	       d2 = 0.0;
 
+	d1 = part->y - (root->y - root->cote/2.0);
+	d2 = part->y - (root->y + root->cote/2.0);
+
+	if( d1 > 0.0 && d2 <= 0.0 )
+		dx = 0.0;
+	else
+		dx = fmin(fabs(d1), fabs(d2));
+
+	d1 = part->y - (root->y - root->cote/2.0);
+	d2 = part->y - (root->y + root->cote/2.0);
+
+	if( d1 > 0.0 && d2 <= 0.0 )
+		dy = 0.0;
+	else
+		dy = fmin(fabs(d1), fabs(d2));
+
+	d1 = part->y - (root->y - root->cote/2.0);
+	d2 = part->y - (root->y + root->cote/2.0);
+
+	if( d1 > 0.0 && d2 <= 0.0 )
+		dz = 0.0;
+	else
+		dz = fmin(fabs(d1), fabs(d2));
+
+	return sqrt( dx*dx + dy*dy + dz*dz );
+}
+#endif
+
+#ifdef PERIODIC
 void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part, const double BS)
+#else
+void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part)
+#endif
 {
 #ifdef __DEBUG_CALCVOIS_TREECODE_P1__
 	fprintf(stderr, "%s:: level -> %d ; indice -> %d\n", __func__, root->level, 0);
@@ -528,7 +536,11 @@ void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part, const dou
 	/************************************************************************\
 	 *	1ére étape : Vérifier qu'au moins une particule est candidate	*
 	\************************************************************************/
+#ifdef PERIODIC
 	if( Tree_Dist(root, part, BS) > Tab[NbVois-1].r )
+#else
+	if( Tree_Dist(root, part) > Tab[NbVois-1].r )
+#endif
 	{
 #ifdef __DEBUG_CALCVOIS_TREECODE_P2__
 		fprintf(stderr, "\033[37m%d::Inutile de descendre plus bas (level : %d) !!!\033[00m\n", part->id, root->level);
@@ -545,7 +557,11 @@ void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part, const dou
 		TNoeud t1 = root->fils;
 		do
 		{
+#ifdef PERIODIC
 			Tree_Voisin(t1, Tab, NbVois, part, BS);
+#else
+			Tree_Voisin(t1, Tab, NbVois, part);
+#endif
 			t1 = t1->frere;
 		}
 		while(t1 != NULL);
@@ -555,7 +571,11 @@ void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part, const dou
 #ifdef __DEBUG_CALCVOIS_TREECODE_P4__
 		fprintf(stderr, "\033[35mParcours (level : %d) (%p, %d, %d)!!!\033[00m\n", root->level, root->first, root->N, NbVois);
 #endif
+#ifdef PERIODIC
 		CalcVois(root->first, root->N, Tab, NbVois, part, BS);
+#else
+		CalcVois(root->first, root->N, Tab, NbVois, part);
+#endif
 	}
 
 	return ;
@@ -593,34 +613,64 @@ double Tree_ApproxPot(const TNoeud root, const Part *part, const double soft)
 		return 0.0;
 }
 
-#ifdef __bool_true_false_are_defined
+#ifdef PERIODIC
+#	ifdef __bool_true_false_are_defined
 inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
-#else
+#	else
 inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
+#	endif
+#else
+#	ifdef __bool_true_false_are_defined
+inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+#	else
+inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+#	endif
 #endif
 {
+#ifdef PERIODIC
 	if( Tree_Dist(root, part, BS) == 0.0)
+#else
+	if( Tree_Dist(root, part) == 0.0)
+#endif
 #ifdef __bool_true_false_are_defined
 		return true;
 #else
 		return 1;
 #endif
+#ifdef PERIODIC
 	return ( root->cote / Tree_Dist(root, part, BS) ) > accept;
+#else
+	return ( root->cote / Tree_Dist(root, part) ) > accept;
+#endif
 }
 
+#ifdef PERIODIC
 double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const double soft, const double BS)
+#else
+double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const double soft)
+#endif
 {
 	double pot = 0.0;
 
+#ifdef PERIODIC
 	if( Tree_Accept(root, part, accept, BS) //( ( root->cote / Tree_Dist(root, part) ) > accept )
 		&& root->fils != NULL
 	  )
+#else
+	if( Tree_Accept(root, part, accept) //( ( root->cote / Tree_Dist(root, part) ) > accept )
+		&& root->fils != NULL
+	  )
+#endif
 	{
 		TNoeud t1 = root->fils;
 		do
 		{
 			//Tree_Voisin(t1, Tab, NbVois, part);
+#ifdef PERIODIC
 			pot += Tree_CalcPot(t1, part, accept, soft, BS);
+#else
+			pot += Tree_CalcPot(t1, part, accept, soft);
+#endif
 			t1   = t1->frere;
 		}
 		while(t1 != NULL);
@@ -633,9 +683,17 @@ double Tree_CalcPot(TNoeud root, const Part *part, const double accept, const do
 	{
 #ifdef TREE_CALCPOT_DEBUG_
 	fprintf(stderr, "\033[31mUtilisation de ApproxPot :: %d (val : %g ; %g) (critere : %g, soft : %g)\033[00m\n",
+#ifdef PERIODIC
 			Tree_Accept(root, part, accept, BS),
+#else
+			Tree_Accept(root, part, accept),
+#endif
 			root->cote,
+#ifdef PERIODIC
 			Tree_Dist(root, part, BS),
+#else
+			Tree_Dist(root, part),
+#endif
 			accept,
 			soft);
 #endif

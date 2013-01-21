@@ -21,13 +21,24 @@
  */
 Part GravityCenter(const TNoeud root, const int N) __attribute__ ((__const__));
 
+#ifdef PERIODIC
+/**
+ * Calcule le centre de densité du système en utilisant le tree code.
+ * @param root Racine du tree code.
+ * @param N Nombre de voisin à utiliser lors du calcul du centre de densité.
+ * @param BS Taille de la boîte.
+ * @return Coordonnée et vitesse, de type Part, du centre de densité.
+ */
+Part DensityCenter(const TNoeud root, const int NbVois, const double BS) __attribute__ ((__const__));
+#else
 /**
  * Calcule le centre de densité du système en utilisant le tree code.
  * @param root Racine du tree code.
  * @param N Nombre de voisin à utiliser lors du calcul du centre de densité.
  * @return Coordonnée et vitesse, de type Part, du centre de densité.
  */
-Part DensityCenter(const TNoeud root, const int NbVois, const double BS) __attribute__ ((__const__));
+Part DensityCenter(const TNoeud root, const int NbVois) __attribute__ ((__const__));
+#endif
 
 /**
  * Calcul les ratios des axes principaux de la matrice d'inertie associé au système.
@@ -38,6 +49,7 @@ Part DensityCenter(const TNoeud root, const int NbVois, const double BS) __attri
  */
 void Axial_ratio(const TNoeud root, double R_ori, double *grand, double *petit);
 
+#ifdef PERIODIC
 /**
  * Calcul le potentiel du systéme en utilisant un calcul direct à l'aide du tree code.
  * @param root Racine de l'arbre.
@@ -46,6 +58,17 @@ void Axial_ratio(const TNoeud root, double R_ori, double *grand, double *petit);
  * @return Rayon sur la colonne 0 et potentiel sur la colonne 1, classé de la même maniére que leq particules de l'arbre.
  */
 double** CalcPotentiel(const TNoeud root, const double theta, const double rsoft, const double BS) __attribute__ ((__const__));
+#else
+/**
+ * Calcul le potentiel du systéme en utilisant un calcul direct à l'aide du tree code.
+ * @param root Racine de l'arbre.
+ * @param theta Critére de sélection des cubes.
+ * @param rsoft Paramètre de lissage du potentiel.
+ * @param BS Taille de la boîte.
+ * @return Rayon sur la colonne 0 et potentiel sur la colonne 1, classé de la même maniére que leq particules de l'arbre.
+ */
+double** CalcPotentiel(const TNoeud root, const double theta, const double rsoft) __attribute__ ((__const__));
+#endif
 
 /**
  * Calcul la fonction de masse de l'objet.

@@ -140,10 +140,10 @@ all-single:$(EXEC)
 all:$(EXEC) $(EXEC2)
 
 $(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN)
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
+	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
 
 $(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2)
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
+	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
 
 tree_create.o:tree_create.c tree.h
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<

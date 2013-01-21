@@ -33,7 +33,11 @@ Part     GravityCenter(const TNoeud root, const int N)
 	return center;
 }
 
+#ifdef PERIODIC
 Part     DensityCenter(const TNoeud root, const int NbVois, const double BS)
+#else
+Part     DensityCenter(const TNoeud root, const int NbVois)
+#endif
 {
 	Part center = {.x = 0.0, .y = 0.0, .z = 0.0, .r = 0.0, .vx = 0.0, .vy = 0.0, .vz = 0.0, .v = 0.0},
 	     *Vois  = NULL;
@@ -82,7 +86,11 @@ Part     DensityCenter(const TNoeud root, const int NbVois, const double BS)
 
 		qsort(Vois, (size_t)NbVois, sizeof(Part), qsort_partstr);
 		//Calcul des voisins :
+#ifdef PERIODIC
 		Tree_Voisin(root, Vois, NbVois, &root->first[i], BS);
+#else
+		Tree_Voisin(root, Vois, NbVois, &root->first[i]);
+#endif
 
 		qsort(Vois, (size_t)NbVois, sizeof(Part), qsort_partstr);
 		//Calcul de la densité locale :
@@ -220,13 +228,21 @@ void     Axial_ratio(const TNoeud root, double R_ori, double *grand, double *pet
 	*petit              = p_ratio;
 }
 
+#ifdef PERIODIC
 double** CalcPotentiel(const TNoeud root, const double theta, const double rsoft, const double BS)
+#else
+double** CalcPotentiel(const TNoeud root, const double theta, const double rsoft)
+#endif
 {
 	double **potentiel;
 	potentiel  = double2d(root->N, 2);
 	for (int i = 0; i < root->N/*1000*/; i++)
 	{
+#ifdef PERIODIC
 		potentiel[i][1] = Tree_CalcPot(root, &root->first[i], theta, rsoft, BS);
+#else
+		potentiel[i][1] = Tree_CalcPot(root, &root->first[i], theta, rsoft);
+#endif
 		potentiel[i][0] = root->first[i].r;
 #ifndef __POTENTIALCENTER_NOPROGRESS_P
 		fprintf(stderr, "\r\033[31mCalcul du potentiel :: %03.3f%%\033[00m", ( (double)i + 1.0)/( (double)root->N ) * 100.0);

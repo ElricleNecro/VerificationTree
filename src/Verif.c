@@ -127,7 +127,11 @@ Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS)
 			fprintf(stderr, "\n");
 		}
 		//Calcul des voisins :
+#ifdef PERIODIC
 		Tree_Voisin(root, Vois, NbVois, &root->first[i], BS);
+#else
+		Tree_Voisin(root, Vois, NbVois, &root->first[i]);
+#endif
 
 		//Calcul de la densité locale :
 		rholoc     = (NbVois) * root->first[0].m / ( (4.0/3.0) * acos(-1.0) * Vois[NbVois -1].r * Vois[NbVois -1].r * Vois[NbVois -1].r );
@@ -431,6 +435,8 @@ int main(int argc, char **argv)
 		rsoft      = 0.0,
 		PosFact    = 3.086e16,
 		VitFact    = 1.0;
+	time_t  t1, t2;
+	clock_t start, finish;
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -577,17 +583,17 @@ int main(int argc, char **argv)
 	Save_Part("Particule-BeCorr.dat", posvits, NbPart);
 
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-#ifdef USE_TIMER
-	time_t t1, t2;
-	clock_t start, finish;
+#ifdef PERIODIC
+	#ifdef USE_TIMER
 	start = clock();
 	time(&t1);
-#endif
+	#endif
 	TotMove = ReCentre(root, posvits, NbPart, NbVois, NbMin, header.BoxSize); // * PosFact);
-#ifdef USE_TIMER
+	#ifdef USE_TIMER
 	finish = clock();
 	time(&t2);
 	fprintf(stderr, "\033[32mTemps d'exécution de la fonction %s :: \033[33m%f (%.3f) secondes\033[00m\n", "ReCentre", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
+	#endif
 #endif
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 
@@ -619,7 +625,11 @@ int main(int argc, char **argv)
 	if( gc )
 		Center = GravityCenter(root, NbVois);
 	else
+#ifdef PERIODIC
 		Center = DensityCenter(root, NbVois, header.BoxSize); // * PosFact); //3.086e16 );
+#else
+		Center = DensityCenter(root, NbVois); // * PosFact); //3.086e16 );
+#endif
 	printf("\033[31m%g\t%g\t%g\n\033[00m", Center.x, Center.y, Center.z);
 #ifdef USE_TIMER
 	finish = clock();
@@ -713,7 +723,11 @@ int main(int argc, char **argv)
 	start = clock();
 	time(&t1);
 #endif
+#ifdef PERIODIC
 	potentiel           = CalcPotentiel(root, theta, rsoft, header.BoxSize); // * PosFact); //3.086e16 );
+#else
+	potentiel           = CalcPotentiel(root, theta, rsoft); // * PosFact); //3.086e16 );
+#endif
 #ifdef USE_TIMER
 	finish = clock();
 	time(&t2);
@@ -924,190 +938,4 @@ int main(int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
-
-////#define NEAREST(x, boxhalf, boxsize) (((x)>boxhalf)?((x)-boxsize):(((x)<-boxhalf)?((x)+boxsize):(x)))
-//Part PeriodicGravityCenter(const Part *posvits, const int NbPart, const double BoxSize)
-//{
-//	Part center = {	  .x  = BoxSize/2.0, //0.0,
-//			  .y  = BoxSize/2.0, //0.0,
-//			  .z  = BoxSize/2.0, //0.0,
-//			  .r  = 0.0,
-//			  .vx = 0.0,
-//			  .vy = 0.0,
-//			  .vz = 0.0,
-//			  .v  = 0.0};
-//
-//	for (int i = 0; i < NbPart; i++) {
-//		double dx = posvits[i].x - BoxSize/2.0,
-//		       dy = posvits[i].y - BoxSize/2.0,
-//		       dz = posvits[i].z - BoxSize/2.0;
-//
-//		center.x += NEAREST(dx, BoxSize/2.0, BoxSize);
-//		center.y += NEAREST(dy, BoxSize/2.0, BoxSize);
-//		center.z += NEAREST(dz, BoxSize/2.0, BoxSize);
-//	}
-//
-//	center.x /= NbPart;
-//	center.y /= NbPart;
-//	center.z /= NbPart;
-//
-//	printf("%g %g %g\n", center.x, center.y, center.z);
-//
-//	return center;
-//}
-////#undef NEAREST
-
-
-
-//int trie_Pot(const void *a, const void *b)
-//{
-////	const double **p1 = (const double**)a,
-////	             **p2 = (const double**)b;
-////	double * const *p1 = a;
-////	double * const *p2 = b;
-//	const double *p1 = *(const double **)a,
-//	             *p2 = *(const double **)b;
-//
-//	if( p1[0] > p2[0] )//sqrt(p1->x*p1->x + p1->y*p1->y) > sqrt(p2->x*p2->x + p2->y*p2->y))
-//		return 1;
-//	else if( p1[0] < p2[0] )
-//		return -1;
-//	else
-//		return 0;
-//}
-//
-//int qsort_comp(const void *a, const void *b)
-//{
-//	const double *p1 = *(const double **)a,
-//	             *p2 = *(const double **)b;
-//
-//	if(p1[0] > p2[0])
-//		return 1;
-//	else
-//		return -1;
-//}
-
-
-
-//
-//	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-//
-//	NbPartOri = NbPart;
-//	printf("Chargement de %d particule de type %d effectué.\n", NbPart, type);
-//
-//	Save_Part("Particule-BeCorr.dat", posvits, NbPart);
-//
-//	/****************************************************************\
-//	 *		Correction des conditions périodiques		*
-//	\****************************************************************/
-//	taille = 2.0  * posvits[NbPart-1].r;
-//	root   = Tree_Init(NbPart, header.BoxSize/2.0, header.BoxSize/2.0, header.BoxSize/2.0, taille);
-//	if( root == NULL )
-//		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-//
-//	root->first = posvits;
-//
-//	//Center = GravityCenter(root, NbVois);
-//	//Center = PeriodicGravityCenter(posvits, NbPart, header.BoxSize*3.086e16);
-//	Center = MoreDenseParticule(root, NbVois);
-//
-//	double Bord = 1.0 * header.BoxSize;
-//
-//	for (int i = 0; i < NbPart; i++) {
-//		posvits[i].x -= Center.x;
-//		posvits[i].y -= Center.y;
-//		posvits[i].z -= Center.z;
-//
-//		if( posvits[i].x > Bord*3.086e16 )
-//			posvits[i].x -= header.BoxSize*3.086e16;
-//		else if( posvits[i].x < -Bord*3.086e16 )
-//			posvits[i].x += header.BoxSize*3.086e16;
-//
-//		if( posvits[i].y > Bord*3.086e16 )
-//			posvits[i].y -= header.BoxSize*3.086e16;
-//		else if( posvits[i].y < -Bord*3.086e16 )
-//			posvits[i].y += header.BoxSize*3.086e16;
-//
-//		if( posvits[i].z > Bord*3.086e16 )
-//			posvits[i].z -= header.BoxSize*3.086e16;
-//		else if( posvits[i].z < -Bord*3.086e16 )
-//			posvits[i].z += header.BoxSize*3.086e16;
-//
-//		posvits[i].r  = sqrt( pow(posvits[i].x, 2.0) + pow(posvits[i].y, 2.0) + pow(posvits[i].z, 2.0) );
-//	}
-//
-//	TotMove = Part_add(Center, TotMove);
-//
-//	Save_Part("Particule-Classe.dat", posvits, NbPart);
-//	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-//
-//	taille      = 2.0 * posvits[NbPart-1].r;
-//	rmax        = posvits[NbPart-1].r;
-//	root        = Tree_Init(NbPart, 0.0, 0.0, 0.0, taille);
-//	if( root == NULL )
-//		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-//
-//	root->first = posvits;
-//	Tree_Build2(root, NbPart, NbMin);
-
-
-
-/*{
-	Part center = {	  .x  = 0.0,
-			  .y  = 0.0,
-			  .z  = 0.0,
-			  .r  = 0.0,
-			  .vx = 0.0,
-			  .vy = 0.0,
-			  .vz = 0.0,
-			  .v  = 0.0},
-	     *Vois  = NULL;
-	double rholoc, dens = 0.0;
-
-	Vois = Part1d(NbVois);
-
-	for (int i = 0; i < root->N; i++)
-	{
-		//On initialise le tableau des voisins :
-		for (int j = 0, k = 0; j < NbVois && k < root->N; j++,k++)
-		{
-			if( j == i )
-				k++;
-			//memcpy(&Vois[j], &root->first[k], sizeof(Part));
-			Vois[j].x = root->first[k].x;
-			Vois[j].y = root->first[k].y;
-			Vois[j].z = root->first[k].z;
-			Vois[j].r = sqrt( pow(root->first[i].x - root->first[k].x, 2.0) + pow(root->first[i].y - root->first[k].y, 2.0) + pow(root->first[i].z - root->first[k].z, 2.0) );
-			Vois[j].vx = root->first[k].vx;
-			Vois[j].vy = root->first[k].vy;
-			Vois[j].vz = root->first[k].vz;
-			Vois[j].v = sqrt( pow(root->first[i].vx - root->first[k].vx, 2.0) + pow(root->first[i].vy - root->first[k].vy, 2.0) + pow(root->first[i].vz - root->first[k].vz, 2.0) );
-			if( k == root->N -1)
-				k = 0;
-		}
-
-		qsort(Vois, (size_t)NbVois, sizeof(Part), qsort_partstr);
-		//Calcul des voisins :
-		Tree_Voisin(root, Vois, NbVois, &root->first[i]);
-
-		//Calcul de la densité locale :
-		rholoc     = (NbVois - 1) * root->first[0].m / ( (4.0/3.0) * acos(-1.0) * Vois[NbVois -1].r * Vois[NbVois -1].r * Vois[NbVois -1].r );
-
-		if( rholoc > dens )
-		{
-			dens = rholoc;
-			center = root->first[i];
-		}
-#ifndef __DENSITYCENTER_NOPROGRESS_P
-		fprintf(stderr, "\r\033[31m%s:: %03.3f%%\033[00m", __func__, ( (double)i + 1.0)/( (double)root->N ) * 100.0);
-#endif
-	}
-#ifndef __DENSITYCENTER_NOPROGRESS_P
-	fputs("\n", stderr);
-#endif
-
-	Part1d_libere(Vois);
-
-	return center;
-}*/
 
