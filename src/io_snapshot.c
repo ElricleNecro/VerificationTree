@@ -158,14 +158,14 @@ Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Nga
 	*tps = Time = header1.time;
 	//Redshift = header1.time;
 
-	int ind = NumPart * 1000;
+	//int ind = NumPart * 1000;
 	for(i = 1; i < NumPart; i++)
 	{
 		P[i].Id = Id[i];
-		if( Id[i] < ind )
-			ind = Id[i];
+		//if( Id[i] < ind )
+		//	ind = Id[i];
 	}
-	printf("Indice : %d\n", ind);
+	//printf("Indice : %d\n", ind);
 
 	*header2 = header1;
 	*NbPart = NumPart;
@@ -202,7 +202,7 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 
 	printf("%d\t%d\t%d\t%d\t%g\n", *NbPart, header.npart[type], type, npart, header.BoxSize);
 
-	int ind = 1000 * header.npart[type];
+	//int ind = 1000 * header.npart[type];
 	for (int i = 1, j = 0; i <= npart && j < header.npart[type]; i++)
 	{
 		if(P[i].Type == type)
@@ -218,8 +218,8 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 			part[j].v  = sqrt(part[j].vx*part[j].vx + part[j].vy*part[j].vy + part[j].vz*part[j].vz);
 
 			part[j].id = P[i].Id;
-			if( P[i].Id < ind )
-				ind = P[i].Id;
+			//if( P[i].Id < ind )
+			//	ind = P[i].Id;
 			part[j].m  = P[i].Mass;
 			if(part[j].m == 0.0)
 			{
@@ -229,7 +229,7 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 			j++;
 		}
 	}
-	printf("Indice 2 : %d\n", ind);
+	//printf("Indice 2 : %d\n", ind);
 
 	P++;
 	free(P);
