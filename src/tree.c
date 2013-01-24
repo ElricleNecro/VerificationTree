@@ -369,7 +369,6 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 			    );
 #endif
 		di[i].id = insert[i].id;
-//		if( part->id == 14909 && di[i].id == 0 ) fprintf(stderr, "\033[31mAïe !!!!!\033[00m\n");
 #ifdef __DEBUG_CALCVOIS_TREECODE_P__
 		fprintf(stderr, "\033[36m%s::di :: %.16g (%.16g)\033[00m\n", __func__, di[i].r, Tab[NbVois - 1].r);
 #endif
@@ -380,33 +379,12 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 			if( di[j].r > di[j+1].r )
 			{
 				Echange(&di[j], &di[j+1]);
-//				Part tmp = di[j];
-//				di[j]    = di[j+1];
-//				di[j+1]  = tmp;
 			}
 			else
 				break;
 		}
 #endif
 	}
-//	if( part->id == 14909 )
-//	{
-//		fprintf(stderr, "In CalcVois insert : ");
-//		for (int i = 0; i < N; i++)
-//		{
-//			fprintf(stderr, "%d ", insert[i].id);
-//		}
-//		fprintf(stderr, "\n");
-//	}
-//	if( part->id == 14909 )
-//	{
-//		fprintf(stderr, "In CalcVois : ");
-//		for (int i = 0; i < N; i++)
-//		{
-//			fprintf(stderr, "%d ", di[i].id);
-//		}
-//		fprintf(stderr, "\n");
-//	}
 #ifdef USE_VOIS_QSORT
 #warning "Use of qsort in neighbourhood research : performance will be reduced."
 	qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
@@ -433,9 +411,6 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 				if( Tab[j].r > Tab[j+1].r )
 				{
 					Echange(&Tab[j], &Tab[j+1]);
-//					Part tmp = Tab[j];
-//					Tab[j]   = Tab[j+1];
-//					Tab[j+1] = tmp;
 				}
 				else
 					break;
@@ -445,15 +420,6 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 		else if( di[i].r > Tab[NbVois - 1].r )
 			break;
 	}
-//	if( part->id == 14909 )
-//	{
-//		fprintf(stderr, "In CalcVois Tab : ");
-//		for (int i = 0; i < NbVois; i++)
-//		{
-//			fprintf(stderr, "%d ", Tab[i].id);
-//		}
-//		fprintf(stderr, "\n");
-//	}
 	free(di);
 }
 

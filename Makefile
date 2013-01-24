@@ -20,8 +20,8 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
 EXTRA=-pg
 #-pg
 
-INC=-I $$HOME/.C_C++/include -I $$HOME/.local/include -I include/
-LFLAG=-L $$HOME/.C_C++/lib -I $$HOME/.local/lib
+INC=-I $$HOME/.local/include -I include/
+LFLAG=-L $$HOME/.local/lib
 LINK=-lm
 
 #!|-----------------------------------------------------|
@@ -50,6 +50,8 @@ DEBUG+=-DUSE_STRUCT_PART
 #DEBUG+=-DUSE_VOIS_QSORT
 DEBUG+=-DTEST_VOISIN_LOG_SHUFFLE
 DEBUG+=-DTEST_INFLUENCE_MODIF_MARCHE_ARBRE
+DEBUG+=-DPERIODIC
+#-DP_DBG_TREECODE_P_CALC
 
 ifeq ($(IOPERSO),1)
 DEBUG+=-DIO_PERSO
@@ -139,10 +141,10 @@ all-single:$(EXEC)
 #!
 all:$(EXEC) $(EXEC2)
 
-$(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN)
+$(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN) Makefile
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
 
-$(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2)
+$(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2) Makefile
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
 
 tree_create.o:tree_create.c tree.h
@@ -151,7 +153,7 @@ tree_create.o:tree_create.c tree.h
 tree_voisin.o:tree_voisin.c tree.h
 	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
 
-$(OBJDIR)/%.o:$(SRCDIR)/%.c $(INCDIR)/$(HEA)
+$(OBJDIR)/%.o:$(SRCDIR)/%.c $(INCDIR)/$(HEA) Makefile
 	$(CC) $(CFLAG) $(INC) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) -c $< -o $@
 
 $(EXEC):$(OBJDIR)/$(MAIN:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
