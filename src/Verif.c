@@ -55,123 +55,6 @@
 #define __DBG_SORT_MYSORT_P 0
 #define __DBG_SORT__QSORT_P 0
 
-#ifdef __DEBUG_VOIS_LOG
-Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS, const char * fname)
-#else
-Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS)
-#endif
-{
-	Part *Vois  = NULL;
-
-	Vois        = Part1d(NbVois);
-
-#ifdef __DEBUG_DENSCENTER_P
-	fprintf(stderr, "\033[35mRoot de l'arbre : %d particules, nombre de voisin voulu : %d\033[00m\n", root->N, NbVois);
-#endif
-
-	double rholoc    = 0.0,
-	       rholoctot = 0.0;
-	int    NbPart    = root->N,
-	       ind       = 0;
-
-#ifdef __DEBUG_VOIS_LOG
-	FILE *fich = NULL;
-	if( (fich = fopen(fname, "w") ) == NULL )
-	{
-		perror("Impossible d'ouvrir le fichier : ");
-		exit(EXIT_FAILURE);
-	}
-#endif
-
-	for (int i = 0; i < NbPart; i++)
-	{
-		//On initialise le tableau des voisins :
-		for(int j = 0, k = 0; j < NbVois && k < NbPart; j++,k++)
-		{
-			if( j == i )
-				k++;
-			Vois[j].x  = root->first[k].x;
-			Vois[j].y  = root->first[k].y;
-			Vois[j].z  = root->first[k].z;
-			Vois[j].r  = sqrt( pow(root->first[i].x - root->first[k].x, 2.0) + pow(root->first[i].y - root->first[k].y, 2.0) + pow(root->first[i].z - root->first[k].z, 2.0) );
-			Vois[j].id = root->first[k].id;
-			Vois[j].vx = root->first[k].vx;
-			Vois[j].vy = root->first[k].vy;
-			Vois[j].vz = root->first[k].vz;
-			Vois[j].v  = sqrt( pow(root->first[i].vx - root->first[k].vx, 2.0) + pow(root->first[i].vy - root->first[k].vy, 2.0) + pow(root->first[i].vz - root->first[k].vz, 2.0) );
-			if( k == NbPart -1)
-				k = 0;
-		}
-//		for(int j = 0; j < NbVois; j++)
-//			Vois[j].r  = 2.0*BS;
-
-
-		if( i < 1 )
-		{
-			fprintf(stderr, "Part : %d\n", root->first[i].id);
-			for (int j = 0; j < NbVois; j++)
-			{
-				fprintf(stderr, "%d ", Vois[j].id);
-			}
-			fprintf(stderr, "\n");
-		}
-
-		qsort(Vois, (size_t)NbVois, sizeof(Part), qsort_partstr);
-
-		if( i < 1 )
-		{
-			for (int j = 0; j < NbVois; j++)
-			{
-				fprintf(stderr, "%d ", Vois[j].id);
-			}
-			fprintf(stderr, "\n");
-		}
-		//Calcul des voisins :
-#ifdef PERIODIC
-		Tree_Voisin(root, Vois, NbVois, &root->first[i], BS);
-#else
-		Tree_Voisin(root, Vois, NbVois, &root->first[i]);
-#endif
-
-		//Calcul de la densité locale :
-		rholoc     = (NbVois) * root->first[0].m / ( (4.0/3.0) * acos(-1.0) * Vois[NbVois -1].r * Vois[NbVois -1].r * Vois[NbVois -1].r );
-
-#ifdef __DEBUG_VOIS_LOG
-		fprintf(fich, "%g %g %g %g\n", root->first[i].x, root->first[i].y, root->first[i].z, rholoc);
-#endif
-
-		if( rholoc > rholoctot )
-		{
-			rholoctot = rholoc;
-			ind = i;
-		}
-
-		if( i < 1 )
-		{
-			for (int j = 0; j < NbVois; j++)
-			{
-				fprintf(stderr, "%d ", Vois[j].id);
-			}
-			fprintf(stderr, "\n");
-		}
-
-#ifndef __DENSITYCENTER_NOPROGRESS_P
-		fprintf(stderr, "\r\033[31m%s:: %03.3f%%\033[00m", __func__, ( (double)i + 1.0)/( (double)NbPart ) * 100.0);
-#endif
-	}
-#ifndef __DENSITYCENTER_NOPROGRESS_P
-	fputs("\n", stderr);
-#endif
-	Part1d_libere(Vois);
-
-#ifdef __DEBUG_VOIS_LOG
-	fclose(fich);
-#endif
-	fprintf(stderr, "%d %d %g %g %g %g\n", ind, root->first[ind].id, root->first[ind].x, root->first[ind].y, root->first[ind].z, rholoctot);
-
-	return root->first[ind];
-}
-
 TNoeud Create_Tree(Part *posvits, const int NbPart, const int NbMin, const Part Center, const double taille)
 {
 	TNoeud root = NULL;
@@ -185,165 +68,6 @@ TNoeud Create_Tree(Part *posvits, const int NbPart, const int NbMin, const Part 
 	Tree_Build2(root, NbPart, NbMin);
 
 	return root;
-}
-
-Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, const int NbMin, const double BoxSize)
-{
-	/****************************************************************\
-	 *		Correction des conditions périodiques		*
-	\****************************************************************/
-	double Bord    = 0.5 * BoxSize,
-	       taille  = BoxSize;
-	root           = Tree_Init(NbPart, BoxSize /2.0, BoxSize /2.0, BoxSize /2.0, taille);
-	if( root == NULL )
-		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-
-	root->first = posvits;
-
-	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partaxe);
-	fprintf(stderr, "(%g, %g)\t<=>\t(%g, %g, %g)\n", Bord, BoxSize, posvits[NbPart-1].x, posvits[NbPart-1].y, posvits[NbPart-1].z);
-
-	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-	Tree_Build2(root, NbPart, NbMin);
-
-	Part   TotMove = {.x  = 0.0,
-		          .y  = 0.0,
-			  .z  = 0.0,
-			  .r  = 0.0,
-			  .vx = 0.0,
-			  .vy = 0.0,
-			  .vz = 0.0,
-			  .v  = 0.0},
-	       Center;
-
-#ifdef USE_TIMER2
-	time_t t1, t2;
-	clock_t start, finish;
-	start = clock();
-	time(&t1);
-#endif
-#ifdef __DEBUG_VOIS_LOG
-	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre.log");
-#else
-	Center         = MoreDenseParticule(root, NbVois, BoxSize);
-#endif
-
-#ifdef TEST_VOISIN_LOG_SHUFFLE
-#warning "Macro TEST_VOISIN_LOG_SHUFFLE activated, performance will be reduced."
-	for (int i = 0; i < NbPart; i++)
-	{
-		int j;
-		do {
-			j = rand()%NbPart;
-		}while( j == i );
-//		if( i == 0 )
-//		{
-//			fprintf(stderr, "%g, %g, %g, %g, %g, %g, %d\n", posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz, posvits[i].id );
-//			fprintf(stderr, "%g, %g, %g, %g, %g, %g, %d\n", posvits[j].x, posvits[j].y, posvits[j].z, posvits[j].vx, posvits[j].vy, posvits[j].vz, posvits[j].id );
-//		}
-		Part  tmp  = posvits[i];
-		posvits[i] = posvits[j];
-		posvits[j] = tmp;
-//		if( i == 0 )
-//		{
-//			fprintf(stderr, "%g, %g, %g, %g, %g, %g, %d\n", posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz, posvits[i].id );
-//			fprintf(stderr, "%g, %g, %g, %g, %g, %g, %d\n", posvits[j].x, posvits[j].y, posvits[j].z, posvits[j].vx, posvits[j].vy, posvits[j].vz, posvits[j].id );
-//		}
-	}
-	Tree_Free(root), root = NULL;
-	root           = Tree_Init(NbPart, BoxSize /2.0, BoxSize /2.0, BoxSize /2.0, taille);
-	if( root == NULL )
-		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-
-	root->first = posvits;
-	Tree_Build2(root, NbPart, NbMin);
-
-#	ifdef __DEBUG_VOIS_LOG
-	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre-Manuel.log");
-#	else
-	Center         = MoreDenseParticule(root, NbVois, BoxSize);
-#	endif
-#endif
-#ifdef USE_TIMER2
-	finish = clock();
-	time(&t2);
-	fprintf(stderr, "\033[32mTemps d'exécution de la fonction %s :: \033[33m%f (%.3f) secondes\033[00m\n", "MoreDenseParticule", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
-#endif
-	TotMove = Part_add(Center, TotMove);
-
-	for (int i = 0; i < NbPart; i++) {
-		posvits[i].x -= Center.x;
-		posvits[i].y -= Center.y;
-		posvits[i].z -= Center.z;
-		posvits[i].r  = sqrt( pow(posvits[i].x, 2.0) + pow(posvits[i].y, 2.0) + pow(posvits[i].z, 2.0) );
-	}
-
-#ifdef TEST_INFLUENCE_MODIF_MARCHE_ARBRE
-#warning "Macro TEST_INFLUENCE_MODIF_MARCHE_ARBRE activated, performance will be reduced."
-	Tree_Free(root), root = NULL;
-	root           = Tree_Init(NbPart, 0., 0., 0., taille*20.0);
-	if( root == NULL )
-		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-	root->first = posvits;
-	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-	Tree_Build2(root, NbPart, NbMin);
-
-#	ifdef __DEBUG_VOIS_LOG
-	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre2.log");
-#	else
-	Center         = MoreDenseParticule(root, NbVois, BoxSize);
-#	endif
-#endif
-	for (int i = 0; i < NbPart; i++) {
-		if(	 posvits[i].x > Bord )
-			 posvits[i].x -= BoxSize;
-		else if( posvits[i].x <= -Bord )
-			 posvits[i].x += BoxSize;
-
-		if(	 posvits[i].y > Bord )
-			 posvits[i].y -= BoxSize;
-		else if( posvits[i].y <= -Bord )
-			 posvits[i].y += BoxSize;
-
-		if(	 posvits[i].z > Bord )
-			 posvits[i].z -= BoxSize;
-		else if( posvits[i].z <= -Bord)
-			 posvits[i].z += BoxSize;
-
-		posvits[i].r  = sqrt( pow(posvits[i].x, 2.0) + pow(posvits[i].y, 2.0) + pow(posvits[i].z, 2.0) );
-	}
-#ifdef TEST_INFLUENCE_MODIF_MARCHE_ARBRE
-#warning "Macro TEST_INFLUENCE_MODIF_MARCHE_ARBRE activated, performance will be reduced."
-	Tree_Free(root), root = NULL;
-	root           = Tree_Init(NbPart, 0., 0., 0., taille*2.0);
-	if( root == NULL )
-		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-	root->first = posvits;
-	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-	Tree_Build2(root, NbPart, NbMin);
-
-#	ifdef __DEBUG_VOIS_LOG
-	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre3.log"); // * 3.086e16 );
-#	else
-	Center         = MoreDenseParticule(root, NbVois, BoxSize); // * 3.086e16 );
-#	endif
-#endif
-
-//	root           = Tree_Init(NbPart, 0., 0., 0., taille*2.0);
-//	if( root == NULL )
-//		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
-//
-//	root->first = posvits;
-//	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-//	Tree_Build2(root, NbPart, NbMin);
-//
-//
-//	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partaxe);
-//	fprintf(stderr, "(%g, %g)\t<=>\t(%g, %g, %g)\n", Bord, BoxSize, posvits[NbPart-1].x, posvits[NbPart-1].y, posvits[NbPart-1].z);
-//
-	Tree_Free(root), root = NULL;
-
-	return Center;
 }
 
 int trie_rayon(const void *a, const void *b)
@@ -422,8 +146,8 @@ int main(int argc, char **argv)
 		nb_hors_Ro = 0,
 		nbfiles    = 1,
 		type       = 4;
-	bool    gc         = false,
-		periodic   = false;
+	bool    gc         = false/*,
+		periodic   = false*/;
 	char   *filename   = NULL,
 	       *timeparam  = "TimeParam.dat";
 	double  G          = 6.67384e-11,
@@ -471,9 +195,9 @@ int main(int argc, char **argv)
 				case 'g':
 					gc = true;
 					break;
-				case 'p':
-					periodic = true;
-					break;
+//				case 'p':
+//					periodic = true;
+//					break;
 				case 'o':
 					theta = atof(argv[i+1]);
 					i++;
@@ -594,6 +318,7 @@ int main(int argc, char **argv)
 	time(&t2);
 	fprintf(stderr, "\033[32mTemps d'exécution de la fonction %s :: \033[33m%f (%.3f) secondes\033[00m\n", "ReCentre", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
 	#endif
+	printf("\033[31m%g\t%g\t%g\n\033[00m", TotMove.x, TotMove.y, TotMove.z);
 #endif
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 
@@ -607,11 +332,6 @@ int main(int argc, char **argv)
 
 	root->first = posvits;
 	Tree_Build2(root, NbPart, NbMin);
-
-	printf("\033[36mNombre de particule : %d de masse : %g, La plus lointaine : %g (rayon maximum = %g, taille de la boîte = %g)\nsoftening : %g, critère : %g\nNombre de particule par feuille de Tree Code : %d, Nombre de voisin à chercher : %d\033[00m\n",
-					NbPart,		posvits[0].m,		  rmax,		R_ori,			taille,		rsoft,		theta,						NbMin,				NbVois);
-	if( R_ori > 0.0 )
-		printf("\033[36mTaille du Cut-Off : %g\033[00m\n", R_ori);
 
 	// Soustraire Centre gravité.
 	// Retirer particule lointaine
@@ -654,6 +374,7 @@ int main(int argc, char **argv)
 	Tree_Free(root), root = NULL;
 
 	qsort(posvits, (size_t)NbPartOri, sizeof(Part), qsort_partstr);
+
 	if( R_ori > 0.0 )
 	{
 		printf  ("Nombre de particules considéré lors des traitements : %d (au lieu de %d)\nParticule la plus lointaine : %g\n",
@@ -672,6 +393,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
 
 	root->first = posvits;
+
+	printf("\033[36mNombre de particule : %d de masse : %g, La plus lointaine : %g (rayon maximum = %g, taille de la boîte = %g)\nsoftening : %g, critère : %g\nNombre de particule par feuille de Tree Code : %d, Nombre de voisin à chercher : %d\033[00m\n",
+					NbPart,		posvits[0].m,		  rmax,		R_ori,			taille,		rsoft,		theta,						NbMin,				NbVois);
+	if( R_ori > 0.0 )
+		printf("\033[36mTaille du Cut-Off : %g\033[00m\n", R_ori);
 
 	Tree_Build2(root, NbPart, NbMin);
 	Save_Part("Particule-it.dat", posvits, NbPart);
@@ -747,7 +473,8 @@ int main(int argc, char **argv)
 	// Calcul de la densité :
 	densite             = CalcDensite(root, nb_bin, dr, rmax);
 	//densite             = Dens(root, nb_bin, dr, rmax);
-	LogDens             = CalcLogDensite(root, nb_bin, rayon[0], rmax, rayon[NbPart/2]);
+	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, rayon[NbPart/2]/*1.0*/);
+	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
 	Deltatemp           = CalcTemperature(root, nb_bin, dr, rmax, &Tmoy);
 	// Calcul des énergies :
@@ -819,7 +546,7 @@ int main(int argc, char **argv)
 		double1d_libere(Deltatemp);
 		exit(EXIT_FAILURE);
 	}
-	fprintf(fich, "#Rayon (bin, bords gauche):	densité:	T(r):	Anisotropie(r):\n");
+	fprintf(fich, "#Rayon (bin, bords gauche):	densité:	T(r):	Anisotropie(r):		Rayon (bin log cte) :	Densité (bin log cte) :\n");
 	for(int i=0; i<nb_bin; i++) fprintf(fich, "%.16g %.16g %.16g %.16g %.16g %.16g\n", (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i], LogDens[i][0], LogDens[i][1]);
 	fclose(fich);
 

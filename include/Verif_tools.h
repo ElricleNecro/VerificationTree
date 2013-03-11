@@ -12,6 +12,13 @@
 //	-> 1 pour activé, 0 sinon
 #define __DEBUG_QSORT_P 1
 
+#ifdef __DEBUG_VOIS_LOG
+Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS, const char * fname);
+#else
+Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS);
+#endif
+Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, const int NbMin, const double BoxSize);
+
 //Part GravityCenter(Part *list, const int NbPart);
 /**
  * Calcule le centre de gravité du système en utilisant le tree code.

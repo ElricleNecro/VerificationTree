@@ -18,7 +18,6 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
       -ffloat-store -Wunreachable-code -Wwrite-strings
 #-ggdb -Wmissing-declarations
 EXTRA=-pg
-#-pg
 
 INC=-I $$HOME/.local/include -I include/
 LFLAG=-L $$HOME/.local/lib
@@ -28,15 +27,6 @@ LINK=-lm
 #!|		   Variables de debug			|
 #!|-----------------------------------------------------|
 
-#!IOPERSO :
-#!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
-#!	Défaut : IOPERSO = ""
-#!
-
-#!DEBUG :
-#!	Flag de Debug à passer au compilateur.
-#!
-
 #!TIMER :
 #!	TIMER = -DUSE_TIMER : Affiche le temps d'éxecution des fonctions CalcPotentiel et DensityCenter.
 #!	TIMER = ""          : N'affiche aucun timer.
@@ -44,15 +34,35 @@ LINK=-lm
 #!
 TIMER=-DUSE_TIMER
 
-DEBUG+=-D__DEBUG_VOIS_LOG
+#!DEBUG :
+#!	Flag de Debug à passer au compilateur.
+#!
+#!		(x) __DEBUG_VOIS_LOG                  : Pour le calcul du centre de densité : affiche la densité locale autour de chaque particule.
+#DEBUG+=-D__DEBUG_VOIS_LOG
+#!		(x) USE_STRUCT_PART                   : Active l'utilisation d'une structure à la Gadget plutôt que d'un tableau 2D pour contenir les infos sur les particules. DÉPRETIÉ.
 DEBUG+=-DUSE_STRUCT_PART
+#!		(X) TREE_CM_BUILD                     : Active le calcul du centre de gravité en même temps que l'arbre se construit.
 #DEBUG+=-DTREE_CM_BUILD
+#!		(x) TEST_VOISIN_LOG_SHUFFLE           : Calcul une premiére fois le centre, remélange les particules et recalcul à nouveau. Si les résultats sont les mêmes, tout est bon, sinon l'arbre ou
+#!					      		l'algorithme de recherche des voisins ne fonctionne pas correctement.
+#DEBUG+=-DTEST_VOISIN_LOG_SHUFFLE
+#!		(x) TEST_INFLUENCE_MODIF_MARCHE_ARBRE : Fait deux fois de suite le calcul du centre afin de voir l'influence des itérations du calcul. Les différents résultats devraient à peine bouger.
+#DEBUG+=-DTEST_INFLUENCE_MODIF_MARCHE_ARBRE
+#!		(x) PERIODIC                          : active la prise en compte des conditions périodiques lors du centrage de l'objet.
+#DEBUG+=-DPERIODIC
+#!		(x) DOUBLE_BOUCLE                     : active le calcul des voisins en utilisant une boucle remplissant un premier tableau classé par distance à la particule test puis une boucle insérant
+#!				    			les particules de ce tableau dans le tableau des voisins.
+#DEBUG+=-DDOUBLE_BOUCLE
+#!		(x) USE_VOIS_QSORT                    : Utilise un qsort pour garder les tableaux trié laros de la recherche des voisins. Ne signifie quelque chose que si DOUBLE_BOUCLE est activé.
 #DEBUG+=-DUSE_VOIS_QSORT
-DEBUG+=-DTEST_VOISIN_LOG_SHUFFLE
-DEBUG+=-DTEST_INFLUENCE_MODIF_MARCHE_ARBRE
-DEBUG+=-DPERIODIC
 #-DP_DBG_TREECODE_P_CALC
+#!		(x) TREE_CALCPOT_DEBUG_               : Affiche des infos de déboggage du potentiel.
+#DEBUG+=-DTREE_CALCPOT_DEBUG_
 
+#!IOPERSO :
+#!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
+#!	Défaut : IOPERSO = ""
+#!
 ifeq ($(IOPERSO),1)
 DEBUG+=-DIO_PERSO
 endif
