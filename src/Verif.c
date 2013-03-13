@@ -5,7 +5,7 @@
  *	Sortie : 3 fichiers : densité(r), potntiel(r) et distribution(E)		*
  * Auteur      : Guillaume Plum								*
  * Date        : Vendredi 13 Mai 2011							*
- * Cadre       : Stage de M1 sur la stabilité des systèmes auto-gravitants		*
+ * Cadre       : Stage de M2 sur la stabilité des systèmes auto-gravitants		*
  * Modification: Thése									*
  * 											*
  * Dépendances :									*
@@ -18,7 +18,7 @@
  * 100000 part -- horizon  -- pour verif, bcp snapshot			Ok !!!		*
  * 5000	       -- t = 0.1 et bcp bcp de snapshot (~200)			Ok !!!		*
  *											*
- * TODO2 : * Facteur d'anisotropie (1 +/- 2*sig^2_r / sig^2_t				*
+ * TODO2 : * Facteur d'anisotropie (1 +/- 2*sig^2_r / sig^2_t)				*
  *	   * Température contre rayon							*
  *	   * Fonction de distribution f(E)						*
  *	   * Rapport du Viriel								*
@@ -36,6 +36,10 @@
 
 #ifdef USE_MCHECK
 #include <mcheck.h>
+#endif
+
+#ifdef USE_SQLITE3
+#include <sqlite3.h>
 #endif
 
 #include "tree.h"
@@ -500,6 +504,44 @@ int main(int argc, char **argv)
 	/********************************************************************************************************************************\
 	 *						Enregistrement des données							*
 	\********************************************************************************************************************************/
+#ifdef USE_SQLITE3
+	int nb_table = 6,
+	    id       = get_id(filename);
+	sqlite3    *conn = NULL;
+	char create[nb_table][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT)",
+					"CREATE TABLE IF NOT EXISTS masse (id INT PRIMARY KEY, r REAL, m REAL)",
+					"CREATE TABLE IF NOT EXISTS densite (id INT PRIMARY KEY, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
+					"CREATE TABLE IF NOT EXISTS densite_log (id INT PRIMARY KEY, bin_rg REAL, l_densite REAL)",
+					"CREATE TABLE IF NOT EXISTS distribution (id INT PRIMARY KEY, e REAL, distribution REAL)",
+					"CREATE TABLE IF NOT EXISTS energie (id INT PRIMARY KEY, r REAL, ec REAL, epot REAL, etot REAL)"
+	},
+	     tampon[1024] = {0};
+	for(int i = 0; i < nb_table; i++)
+	{
+		sqlite3_exec(conn, create[i], NULL, NULL, NULL);
+	}
+
+	for(int i = 0; i < NbPart; i++)
+	{
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g)", "masse", id, rayon[i], masse[i]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "energie", id, posvits[i].r, energie_c[i], energie_t[i], potentiel[i][1]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+	}
+	
+	for(int i = 0; i < nb_bin; i++)
+	{
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "densite", id, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "densite_log", id, LogDens[i][0], LogDens[i][1]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "distribution", id, Emin + (i+1.0)*dE, distrib[i]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+	}
+
+	sqlite3_close(conn);
+#else
 	printf("\033[32mÉcriture du fichier : %s\n", "Masse.dat");
 	if( (fich      = fopen("Masse.dat", "w")) == NULL )
 	{
@@ -647,6 +689,7 @@ int main(int argc, char **argv)
 	}
 	fprintf(fich, "%.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g %.16g\n", simu_time, p_ratio, g_ratio, 2.0*Ec/Ep, Tmoy, SAniso, rayon[(int)(NbPart * 0.1)], rayon[(int)(NbPart/2.0)], rayon[(int)(NbPart * 0.9)], TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
 	fclose(fich);
+#endif
 
 	Tree_Free(root);
 	Part1d_libere(posvits);

@@ -1,8 +1,10 @@
 #ifndef __UTILS_H_GUI__
 #define __UTILS_H_GUI__
 
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /****************************************************************************************\
  * 	Code récupéré de la librairie mnitab de Mr lefrére, enseignant du MNI du M1	*
@@ -25,5 +27,7 @@ void double2d_libere(double ** mat);
 double maxdouble2d(const double **tab, const int NbPart, const int col);
 
 void lissage(double *tab, const int N);
+char *remove_ext(const char* mystr);
+int get_id(const char *filename);
 
 #endif

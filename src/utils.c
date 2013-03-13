@@ -1,5 +1,108 @@
 #include "utils.h"
 
+char *remove_ext(const char* mystr)
+{
+	char *retstr;
+	char *lastdot;
+	if (mystr == NULL)
+		return NULL;
+	if ((retstr = (char*)malloc (strlen (mystr) + 1)) == NULL)
+		return NULL;
+	strcpy (retstr, mystr);
+	lastdot = strrchr (retstr, '.');
+	if (lastdot != NULL)
+		*lastdot = '\0';
+	return retstr;
+}
+
+char* get_first_match(const char *str_regex, const char *str)
+{
+	regex_t preg;
+	regmatch_t *pmatch = NULL;
+	
+	//Compilation de l'expression réguliére :
+	if( regcomp(&preg, str_regex, REG_EXTENDED) != 0 )
+	{
+		fprintf(stderr, "%s::%s::%d :: Bug dans la recherche de l'indice !\n", __FILE__, __func__, __LINE__);
+		regfree(&preg);
+		return NULL;
+	}
+	
+	//Allocation du tableau contenant les résultats de l'expression :
+	if( (pmatch = malloc(sizeof(*pmatch) * preg.re_nsub)) == NULL )
+	{
+		fprintf(stderr, "%s::%s::%d :: Bug dans la recherche de l'indice !\n", __FILE__, __func__, __LINE__);
+		regfree(&preg);
+		return NULL;
+	}
+	
+	//On applique l'expression :
+	int res = regexec (&preg, str, preg.re_nsub, pmatch, 0);
+	
+	//Si on ne trouve aucun motif correspondant :
+	if( res == REG_NOMATCH )
+	{
+		//fprintf(stderr, "%s don't match %s.\n", str_regex, filename);
+		regfree(&preg);
+		free(pmatch);
+		return NULL;
+	}
+	//Ou si l'erreur est plus profonde :
+	else if( res != 0 )
+	{
+		char *text; size_t size;
+		size = regerror(res, &preg, NULL, 0);
+		if( (text = malloc (sizeof (*text) * size)) == NULL )
+		{
+			perror("Memoire insuffisante\n");
+			regfree(&preg);
+			free(pmatch);
+			exit(EXIT_FAILURE);
+		}
+		regerror(res, &preg, text, size);
+		fprintf(stderr, "%s\n", text);
+		free(text);
+		return NULL;
+	}
+
+	char *site = NULL;
+	int start = pmatch[0].rm_so;
+	int end = pmatch[0].rm_eo;
+	size_t size = end - start;
+
+	if( (site = malloc (sizeof (*site) * (size + 1))) == NULL )
+	{
+		perror("Mémoire insuffisante\n");
+		regfree(&preg);
+		exit(EXIT_FAILURE);
+	}
+	
+	strncpy (site, &str[start], size);
+	site[size] = '\0';
+
+	free(pmatch);
+	regfree(&preg);
+	
+	return site;
+}
+
+int get_id(const char *filename)
+{
+	int start = 0;
+	char str_regex[] = "([[:digit:]]+)$", *site = NULL;
+	
+	site = get_first_match(str_regex, filename);
+	if( site == NULL )
+		return -1;
+	while(site[start] != '0')
+		start++;
+	int ind = atoi(&site[start]);
+	
+	free (site);
+	
+	return ind;
+}
+
 void lissage(double *tab, const int N)
 {
 	if( tab[0] == 0.0 )
