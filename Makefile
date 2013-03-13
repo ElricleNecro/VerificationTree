@@ -11,18 +11,6 @@
 #!
 CC=gcc
 
-CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
-      -Wcast-align -Wsign-compare -Wstrict-prototypes \
-      -Wredundant-decls \
-      -Wnested-externs \
-      -ffloat-store -Wunreachable-code -Wwrite-strings
-#-ggdb -Wmissing-declarations
-EXTRA=-pg
-
-INC=-I $$HOME/.local/include -I include/
-LFLAG=-L $$HOME/.local/lib
-LINK=-lm
-
 #!|-----------------------------------------------------|
 #!|		   Variables de debug			|
 #!|-----------------------------------------------------|
@@ -33,6 +21,11 @@ LINK=-lm
 #!	Valeur par défaut   : -DUSE_TIMER.
 #!
 TIMER=-DUSE_TIMER
+
+#!SQLITE3 :
+#!	Utilisation de base de donnée plutôt que des fichiers.
+#!	Valeur par défaut : -DUSE_SQLITE3
+SQLITE3=-DUSE_SQLITE3
 
 #!DEBUG :
 #!	Flag de Debug à passer au compilateur.
@@ -71,6 +64,20 @@ endif
 # -DP_DBG_TREECODE_P_CALC -DP_DBG_TREECODE_P
 #-DP_DBG_TREECODE_P_CALC
 #-DP_DBG_TREECODE_P -DP_DBG_TREECODE_P_CALC
+
+EXTRA=-pg
+INC=-I $$HOME/.local/include -I include/
+
+CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
+      -Wcast-align -Wsign-compare -Wstrict-prototypes \
+      -Wredundant-decls \
+      -Wnested-externs \
+      -ffloat-store -Wunreachable-code -Wwrite-strings \
+      $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC)
+#-ggdb -Wmissing-declarations
+
+LINK=-lm
+LFLAG=-L $$HOME/.local/lib $(LINK)
 
 #!|-----------------------------------------------------|
 #!|		  Variables de dossiers			|
@@ -152,28 +159,28 @@ all-single:$(EXEC)
 all:$(EXEC) $(EXEC2)
 
 $(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN) Makefile
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
+	$(CC) $(CFLAG) -c $< -o $@
 
 $(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2) Makefile
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $< -o $@
+	$(CC) $(CFLAG) -c $< -o $@
 
 tree_create.o:tree_create.c tree.h
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
+	$(CC) $(CFLAG) -c $<
 
 tree_voisin.o:tree_voisin.c tree.h
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) $(INC) -c $<
+	$(CC) $(CFLAG) -c $<
 
 $(OBJDIR)/%.o:$(SRCDIR)/%.c $(INCDIR)/$(HEA) Makefile
-	$(CC) $(CFLAG) $(INC) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) -c $< -o $@
+	$(CC) $(CFLAG) -c $< -o $@
 
 $(EXEC):$(OBJDIR)/$(MAIN:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $^ -o $@ $(LINK)
+	$(CC) $(CFLAG) $(LFLAG) $^ -o $@ $(LINK)
 
 $(EXEC2):$(OBJDIR)/$(MAIN2:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
-	$(CC) $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(INC) $(LFLAG) $^ -o $@ $(LINK)
+	$(CC) $(CFLAG) $(LFLAG) $^ -o $@ $(LINK)
 
 test_temp:
-	$(CC)  $(CFLAG) $(EXTRA) $(DEBUG) $(DBGFLAG) $(TIMER) ../Tree_Code/rand.c utils.c tree.c Verif_tools.c types.c test_Temp.c -o $(LFLAG) test_temp  $(LINK)
+	$(CC)  $(CFLAG) ../Tree_Code/rand.c utils.c tree.c Verif_tools.c types.c test_Temp.c -o test_temp $(LFLAG)
 
 #!help :
 #!	Affiche cette aide.
