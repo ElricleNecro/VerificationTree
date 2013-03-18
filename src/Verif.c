@@ -87,7 +87,7 @@ int trie_rayon(const void *a, const void *b)
 		return 0;
 }
 
-void Save_Part(const char const *fn, const Part const *posvits, const int NbPart)
+void Save_Part(const char * const fn, const Part * const posvits, const int NbPart)
 {
 	FILE *fich     = NULL;
 	if( (fich      = fopen(fn, "w")) == NULL )
@@ -122,7 +122,10 @@ void usage(const char *exec)
 		"\n"
 		"\033[04mOption longue du programme\033[00m :\n"
 		"\t\033[35m--help      \033[00m: Affiche cette aide.\n"
-		"\t\033[34m--timeparam \033[00m: Nom du fichier de paramètre.\n"
+		"\t\033[35m--timeparam \033[00m: Nom du fichier de paramètre.\n"
+#ifdef USE_SQLITE3
+		"\t\033[35m--database  \033[00m: Nom de la base de donnée à utiliser.\n"
+#endif
 		"\n"
 		"\033[04mÀ venir\033[00m :\n"
 		"\t- Support du type de fichier Gadget 2.\n"
@@ -153,7 +156,11 @@ int main(int argc, char **argv)
 	bool    gc         = false/*,
 		periodic   = false*/;
 	char   *filename   = NULL,
-	       *timeparam  = "TimeParam.dat";
+	       *timeparam  = NULL
+#ifdef USE_SQLITE3
+	     , *database   = NULL
+#endif
+	       ;
 	double  G          = 6.67384e-11,
 		R_ori      = -1.0,
 		taille     = 0.0,
@@ -222,9 +229,26 @@ int main(int argc, char **argv)
 					}
 					else if( !strcmp("--timeparam", argv[i]) )
 					{
-						timeparam = argv[i+1];
+						if( (timeparam = malloc((strlen(argv[i+1]) + 1)*sizeof(char))) == NULL )
+						{
+							perror("Memory Problem");
+							exit(EXIT_FAILURE);
+						}
+						strncpy(timeparam, argv[i+1], strlen(argv[i+1]));
 						i++;
 					}
+#ifdef USE_SQLITE3
+					else if( !strcmp("--database", argv[i]) )
+					{
+						if( (database = malloc((strlen(argv[i+1]) + 1)*sizeof(char))) == NULL )
+						{
+							perror("Memory Problem");
+							exit(EXIT_FAILURE);
+						}
+						strncpy(database, argv[i+1], strlen(argv[i+1]));
+						i++;
+					}
+#endif
 					else if( !strcmp("--posfact", argv[i]) )
 					{
 						PosFact = atof(argv[i+1]);
@@ -260,6 +284,26 @@ int main(int argc, char **argv)
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+	if( timeparam == NULL )
+	{
+		if( (timeparam = malloc(20*sizeof(char))) == NULL )
+		{
+			perror("Memory Problem");
+			exit(EXIT_FAILURE);
+		}
+		strncpy(timeparam, "TimeParam.dat", 20);
+	}
+#ifdef USE_SQLITE3
+	if( database == NULL )
+	{
+		if( (database = malloc(20*sizeof(char))) == NULL )
+		{
+			perror("Memory Problem");
+			exit(EXIT_FAILURE);
+		}
+		strncpy(database, "simu.db", 20);
+	}
+#endif
 	if( theta < 0.0 )
 	{
 		if( NbPart <= 1000 )
@@ -278,7 +322,6 @@ int main(int argc, char **argv)
 	\****************************************************************************/
 
 	IO_Header header;
-	FILE   *fich   = NULL;
 	TNoeud  root   = NULL;
 	Part  *posvits = NULL,
 	       Center  = {.x  = 0.0,
@@ -505,43 +548,76 @@ int main(int argc, char **argv)
 	 *						Enregistrement des données							*
 	\********************************************************************************************************************************/
 #ifdef USE_SQLITE3
-	int nb_table = 6,
-	    id       = get_id(filename);
-	sqlite3    *conn = NULL;
-	char create[nb_table][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT)",
-					"CREATE TABLE IF NOT EXISTS masse (id INT PRIMARY KEY, r REAL, m REAL)",
-					"CREATE TABLE IF NOT EXISTS densite (id INT PRIMARY KEY, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
-					"CREATE TABLE IF NOT EXISTS densite_log (id INT PRIMARY KEY, bin_rg REAL, l_densite REAL)",
-					"CREATE TABLE IF NOT EXISTS distribution (id INT PRIMARY KEY, e REAL, distribution REAL)",
-					"CREATE TABLE IF NOT EXISTS energie (id INT PRIMARY KEY, r REAL, ec REAL, epot REAL, etot REAL)"
-	},
+	char create[][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT)",
+				"CREATE TABLE IF NOT EXISTS masse (id INT, r REAL, m REAL)",
+				"CREATE TABLE IF NOT EXISTS densite (id INT, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
+				"CREATE TABLE IF NOT EXISTS densite_log (id, bin_rg REAL, l_densite REAL)",
+				"CREATE TABLE IF NOT EXISTS distribution (id INT, e REAL, distribution REAL)",
+				"CREATE TABLE IF NOT EXISTS energie (id INT, r REAL, ec REAL, epot REAL, etot REAL)",
+				"CREATE TABLE IF NOT EXISTS potentiel (id INT, r REAL, pot REAL)",
+				"BEGIN TRANSACTION",
+				},
 	     tampon[1024] = {0};
+	int nb_table      = sizeof(create)/sizeof(create[0]),
+	    id            = get_id(filename);
+	sqlite3    *conn  = NULL;
+
+	if( sqlite3_open(database, &conn) )
+	{
+		fprintf(stderr, "%s::%s::%d ==> Database %s connection failed.\n", __FILE__, __func__, __LINE__, database);
+		Part1d_libere(posvits);
+		Tree_Free(root);
+		double1d_libere(masse);
+		double1d_libere(rayon);
+		double1d_libere(Aniso);
+		double1d_libere(densite);
+		double2d_libere(potentiel);
+		double2d_libere(LogDens);
+		double1d_libere(energie_t);
+		double1d_libere(energie_c);
+		double1d_libere(disp);
+		double1d_libere(Jac);
+		double1d_libere(distrib);
+		double1d_libere(Deltatemp);
+		exit(EXIT_FAILURE);
+	}
+
 	for(int i = 0; i < nb_table; i++)
 	{
 		sqlite3_exec(conn, create[i], NULL, NULL, NULL);
 	}
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id);
+	printf("::%s::\n", tampon);
+	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
 	for(int i = 0; i < NbPart; i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g)", "masse", id, rayon[i], masse[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "masse", id, rayon[i], masse[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-		
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "energie", id, posvits[i].r, energie_c[i], energie_t[i], potentiel[i][1]);
+
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g)", "energie", id, posvits[i].r, energie_c[i], potentiel[i][1], energie_t[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-	}
-	
-	for(int i = 0; i < nb_bin; i++)
-	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "densite", id, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
-		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "densite_log", id, LogDens[i][0], LogDens[i][1]);
-		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %g, %g, %g, %g)", "distribution", id, Emin + (i+1.0)*dE, distrib[i]);
+
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "potentiel", id, potentiel[i][0], potentiel[i][1]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 
+	for(int i = 0; i < nb_bin; i++)
+	{
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g)", "densite", id, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "densite_log", id, LogDens[i][0], LogDens[i][1]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "distribution", id, Emin + (i+1.0)*dE, distrib[i]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+	}
+
+	sqlite3_exec(conn, "END TRANSACTION", NULL, NULL, NULL);
+
 	sqlite3_close(conn);
 #else
+	FILE   *fich   = NULL;
+
 	printf("\033[32mÉcriture du fichier : %s\n", "Masse.dat");
 	if( (fich      = fopen("Masse.dat", "w")) == NULL )
 	{
@@ -691,6 +767,11 @@ int main(int argc, char **argv)
 	fclose(fich);
 #endif
 
+printf("%s\n", database);
+	free(timeparam);
+#ifdef USE_SQLITE3
+	free(database);
+#endif
 	Tree_Free(root);
 	Part1d_libere(posvits);
 	double1d_libere(Jac);

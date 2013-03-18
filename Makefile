@@ -25,7 +25,7 @@ TIMER=-DUSE_TIMER
 #!SQLITE3 :
 #!	Utilisation de base de donnée plutôt que des fichiers.
 #!	Valeur par défaut : -DUSE_SQLITE3
-SQLITE3=-DUSE_SQLITE3
+SQLITE3=-DUSE_SQLITE3 $(shell pkg-config --cflags sqlite3)
 
 #!DEBUG :
 #!	Flag de Debug à passer au compilateur.
@@ -73,11 +73,11 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
       -Wredundant-decls \
       -Wnested-externs \
       -ffloat-store -Wunreachable-code -Wwrite-strings \
-      $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC)
+      $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC) -g3
 #-ggdb -Wmissing-declarations
 
 LINK=-lm
-LFLAG=-L $$HOME/.local/lib $(LINK)
+LFLAG=-L $$HOME/.local/lib $(LINK) $(shell pkg-config --libs sqlite3)
 
 #!|-----------------------------------------------------|
 #!|		  Variables de dossiers			|
