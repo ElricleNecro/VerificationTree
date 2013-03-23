@@ -349,80 +349,6 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part *part)
 #endif
 {
-#ifdef DOUBLE_BOUCLE
-#	ifdef __DEBUG_CALCVOIS_TREECODE_P__
-	fprintf(stderr, "\033[35m%s:: Vérification :: (%d, %d)\033[00m\n", __func__, N, NbVois);
-#	endif
-	Part *di = NULL;
-	di       = Part1d(N);
-	//Calcul des distances :
-	for(int i=0; i<N; i++)
-	{
-#	ifdef PERIODIC
-		di[i].r  = sqrt(  pow( (NEAREST( (insert[i].x - part->x), (BS/2.0), BS )), 2.0 ) +
-				  pow( (NEAREST( (insert[i].y - part->y), (BS/2.0), BS )), 2.0 ) +
-				  pow( (NEAREST( (insert[i].z - part->z), (BS/2.0), BS )), 2.0 )
-			    );
-#	else
-		di[i].r  = sqrt(  pow( (insert[i].x - part->x), 2.0 ) +
-				  pow( (insert[i].y - part->y), 2.0 ) +
-				  pow( (insert[i].z - part->z), 2.0 )
-			    );
-#	endif
-		di[i].id = insert[i].id;
-#	ifdef __DEBUG_CALCVOIS_TREECODE_P__
-		fprintf(stderr, "\033[36m%s::di :: %.16g (%.16g)\033[00m\n", __func__, di[i].r, Tab[NbVois - 1].r);
-#	endif
-		// Il faut conserver le tableau ordonné, ou on fait un qsort après la boucle :
-#	ifndef USE_VOIS_QSORT
-		for (int j = i-1/*N-2*/; j >= 0; j--)
-		{
-			if( di[j].r > di[j+1].r )
-			{
-				Echange(&di[j], &di[j+1]);
-			}
-			else
-				break;
-		}
-#	endif
-	}
-#	ifdef USE_VOIS_QSORT
-#		warning "Use of qsort in neighbourhood research : performance will be reduced."
-	qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
-#	endif
-
-	for(int i=0; i<N; i++)
-	{
-		if( di[i].r < Tab[NbVois - 1].r && di[i].id != part->id && NotIn(di[i], Tab, NbVois) )
-		{
-			Tab[NbVois - 1].id = di[i].id;
-			Tab[NbVois - 1].r  = di[i].r;
-#	ifdef __DEBUG_CALCVOIS_TREECODE_P__
-			fprintf(stderr, "\033[38m%s::selection :: %.16g\033[00m\n",
-					__func__,
-					Tab[NbVois - 1].r);
-#	endif
-			//On garde le tableau des voisins ordonné :
-#	ifdef USE_VOIS_QSORT
-#		warning "Use of qsort in neighbourhood research : performance will be reduced."
-			qsort(Tab, (size_t)NbVois, sizeof(Part), qsort_partstr);
-#	else
-			for (int j = NbVois-2; j >= 0; j--)
-			{
-				if( Tab[j].r > Tab[j+1].r )
-				{
-					Echange(&Tab[j], &Tab[j+1]);
-				}
-				else
-					break;
-			}
-#	endif
-		}
-		else if( di[i].r > Tab[NbVois - 1].r )
-			break;
-	}
-	free(di);
-#else
 	double di = 0.0;
 	for(int i = 0; i < N; i++)
 	{
@@ -452,7 +378,6 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 			}
 		}
 	}
-#endif
 }
 
 #ifdef PERIODIC
