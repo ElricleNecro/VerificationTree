@@ -408,11 +408,11 @@ int main(int argc, char **argv)
 		root->first[i].x  -= Center.x;
 		root->first[i].y  -= Center.y;
 		root->first[i].z  -= Center.z;
-		root->first[i].vx -= Center.vx;
-		root->first[i].vy -= Center.vy;
-		root->first[i].vz -= Center.vz;
+		//root->first[i].vx -= Center.vx;
+		//root->first[i].vy -= Center.vy;
+		//root->first[i].vz -= Center.vz;
 		root->first[i].r   = sqrt( pow(root->first[i].x, 2.0) + pow(root->first[i].y, 2.0) + pow(root->first[i].z, 2.0) );
-		root->first[i].v   = sqrt( pow(root->first[i].vx, 2.0) + pow(root->first[i].vy, 2.0) + pow(root->first[i].vz, 2.0) );
+		//root->first[i].v   = sqrt( pow(root->first[i].vx, 2.0) + pow(root->first[i].vy, 2.0) + pow(root->first[i].vz, 2.0) );
 		if( R_ori > 0.0 && root->first[i].r < R_ori )
 			NbPart--;
 	}
@@ -555,7 +555,8 @@ int main(int argc, char **argv)
 				"CREATE TABLE IF NOT EXISTS distribution (id INT, type INT, e REAL, distribution REAL)",
 				"CREATE TABLE IF NOT EXISTS energie (id INT, type INT, r REAL, ec REAL, epot REAL, etot REAL)",
 				"CREATE TABLE IF NOT EXISTS potentiel (id INT, type INT, r REAL, pot REAL)",
-				"CREATE TABLE IF NOT EXISTS particule (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
+				"CREATE TABLE IF NOT EXISTS Movement (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
+				//"CREATE TABLE IF NOT EXISTS particule (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
 				"BEGIN TRANSACTION",
 				},
 	     tampon[1024] = {0};
@@ -588,7 +589,10 @@ int main(int argc, char **argv)
 		sqlite3_exec(conn, create[i], NULL, NULL, NULL);
 	}
 	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id);
-	printf("::%s::\n", tampon);
+	//printf("::%s::\n", tampon);
+	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g, %.14g, %.14g)", "Movement", id, TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
 	for(int i = 0; i < NbPart; i++)
