@@ -549,12 +549,13 @@ int main(int argc, char **argv)
 	\********************************************************************************************************************************/
 #ifdef USE_SQLITE3
 	char create[][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT)",
-				"CREATE TABLE IF NOT EXISTS masse (id INT, r REAL, m REAL)",
-				"CREATE TABLE IF NOT EXISTS densite (id INT, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
-				"CREATE TABLE IF NOT EXISTS densite_log (id, bin_rg REAL, l_densite REAL)",
-				"CREATE TABLE IF NOT EXISTS distribution (id INT, e REAL, distribution REAL)",
-				"CREATE TABLE IF NOT EXISTS energie (id INT, r REAL, ec REAL, epot REAL, etot REAL)",
-				"CREATE TABLE IF NOT EXISTS potentiel (id INT, r REAL, pot REAL)",
+				"CREATE TABLE IF NOT EXISTS masse (id INT, type INT, r REAL, m REAL)",
+				"CREATE TABLE IF NOT EXISTS densite (id INT, type INT, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
+				"CREATE TABLE IF NOT EXISTS densite_log (id INT, type INT, bin_rg REAL, l_densite REAL)",
+				"CREATE TABLE IF NOT EXISTS distribution (id INT, type INT, e REAL, distribution REAL)",
+				"CREATE TABLE IF NOT EXISTS energie (id INT, type INT, r REAL, ec REAL, epot REAL, etot REAL)",
+				"CREATE TABLE IF NOT EXISTS potentiel (id INT, type INT, r REAL, pot REAL)",
+				"CREATE TABLE IF NOT EXISTS particule (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
 				"BEGIN TRANSACTION",
 				},
 	     tampon[1024] = {0};
@@ -592,23 +593,28 @@ int main(int argc, char **argv)
 
 	for(int i = 0; i < NbPart; i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "masse", id, rayon[i], masse[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "masse", id, type, rayon[i], masse[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g)", "energie", id, posvits[i].r, energie_c[i], potentiel[i][1], energie_t[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)", "energie", id, type, posvits[i].r, energie_c[i], potentiel[i][1], energie_t[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "potentiel", id, potentiel[i][0], potentiel[i][1]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "potentiel", id, type, potentiel[i][0], potentiel[i][1]);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "particule", id, type, posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 
 	for(int i = 0; i < nb_bin; i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g)", "densite", id, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)", "densite", id, type, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "densite_log", id, LogDens[i][0], LogDens[i][1]);
+
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "densite_log", id, type, LogDens[i][0], LogDens[i][1]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g)", "distribution", id, Emin + (i+1.0)*dE, distrib[i]);
+
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "distribution", id, type, Emin + (i+1.0)*dE, distrib[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 

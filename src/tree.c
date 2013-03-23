@@ -4,10 +4,10 @@
 
 #include "tree.h"
 
-int Level_Max = 50;
-int NB_bro = 8;
-int Zc = 0;
-double G = 6.67e-11;
+static int Level_Max = 50;
+static int NB_bro = 8;
+static int Zc = 0;
+static double G = 6.67e-11;
 //#define NEAREST(x, boxhalf, boxsize) (((x)>boxhalf)?((x)-boxsize):(((x)<-boxhalf)?((x)+boxsize):(x)))
 
 //#include "tree_create.c"
@@ -488,6 +488,9 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 #else
 /*inline*/ double Tree_Dist(const TNoeud root, const Part *part)
 {
+/* TODO:
+ *	Tester le Calcul avec d = fmax(0, fabs(root->x-part->x)-root->cote/2.)
+ */
 	double dx = 0.0,
 	       dy = 0.0,
 	       dz = 0.0,

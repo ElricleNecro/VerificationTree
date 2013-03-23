@@ -65,7 +65,8 @@ endif
 #-DP_DBG_TREECODE_P_CALC
 #-DP_DBG_TREECODE_P -DP_DBG_TREECODE_P_CALC
 
-EXTRA=-pg
+EXTRA=
+#-pg
 INC=-I $$HOME/.local/include -I include/
 
 CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
