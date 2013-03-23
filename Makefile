@@ -51,6 +51,8 @@ DEBUG+=-DUSE_STRUCT_PART
 #-DP_DBG_TREECODE_P_CALC
 #!		(x) TREE_CALCPOT_DEBUG_               : Affiche des infos de déboggage du potentiel.
 #DEBUG+=-DTREE_CALCPOT_DEBUG_
+#!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
+DEBUG+=-DUSE_NEWDISTCALC
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.

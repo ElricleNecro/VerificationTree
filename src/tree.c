@@ -416,6 +416,11 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 /* TODO:
  *	Tester le Calcul avec d = fmax(0, fabs(root->x-part->x)-root->cote/2.)
  */
+#	ifdef USE_NEWDISTCALC
+	double dx = fmax( 0., fabs( root->x - part->x ) - root->cote/2.0);
+	double dy = fmax( 0., fabs( root->y - part->y ) - root->cote/2.0);
+	double dz = fmax( 0., fabs( root->z - part->z ) - root->cote/2.0);
+#	else
 	double dx = 0.0,
 	       dy = 0.0,
 	       dz = 0.0,
@@ -447,6 +452,7 @@ void CalcVois(Part *insert, const int N, Part *Tab, const int NbVois, const Part
 	else
 		dz = fmin(fabs(d1), fabs(d2));
 
+#	endif
 	return sqrt( dx*dx + dy*dy + dz*dz );
 }
 #endif
