@@ -600,7 +600,7 @@ int main(int argc, char **argv)
 	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g, %.14g, %.14g)", "Movement", id, type, TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-	snprintf(tampon, "INSERT INTO %s VALUES (%d, %d, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g)",
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES (%d, %d, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g)",
 			 "timeparam",
 			 id,
 			 type,
