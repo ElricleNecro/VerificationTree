@@ -520,7 +520,7 @@ int main(int argc, char **argv)
 	// Calcul de la densité :
 	densite             = CalcDensite(root, nb_bin, dr, rmax);
 	//densite             = Dens(root, nb_bin, dr, rmax);
-	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, rayon[NbPart/2]/*1.0*/);
+	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, /*rayon[NbPart/2]*/1.0);
 	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
 	Deltatemp           = CalcTemperature(root, nb_bin, dr, rmax, &Tmoy);
@@ -556,6 +556,7 @@ int main(int argc, char **argv)
 				"CREATE TABLE IF NOT EXISTS energie (id INT, type INT, r REAL, ec REAL, epot REAL, etot REAL)",
 				"CREATE TABLE IF NOT EXISTS potentiel (id INT, type INT, r REAL, pot REAL)",
 				"CREATE TABLE IF NOT EXISTS Movement (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
+				"CREATE TABLE IF NOT EXISTS timeparam (id INT, type INT, time REAL, p_ratio REAL, g_ratio REAL, viriel REAL, tmoy REAL, aniso REAL, r10 REAL, r50 REAL, r90 REAL, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
 				//"CREATE TABLE IF NOT EXISTS particule (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
 				"BEGIN TRANSACTION",
 				},
@@ -592,8 +593,20 @@ int main(int argc, char **argv)
 	//printf("::%s::\n", tampon);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %.14g, %.14g, %.14g, %.14g, %.14g, %.14g)", "Movement", id, TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g, %.14g, %.14g)", "Movement", id, type, TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
+	/*printf("::%s::\n", tampon);*/
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g, %.14g, %.14g)", "Movement", id, type, TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
+	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+
+	snprintf(tampon, "INSERT INTO %s VALUES (%d, %d, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g, %.16g)",
+			 "timeparam",
+			 id,
+			 type,
+			 simu_time, p_ratio, g_ratio, 2.0*Ec/Ep, Tmoy, SAniso,
+			 rayon[(int)(NbPart * 0.1)], rayon[(int)(NbPart/2.0)], rayon[(int)(NbPart * 0.9)],
+			 TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
 
 	for(int i = 0; i < NbPart; i++)
 	{
@@ -606,8 +619,8 @@ int main(int argc, char **argv)
 		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "potentiel", id, type, potentiel[i][0], potentiel[i][1]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "particule", id, type, posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz);
-		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+		//snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "particule", id, type, posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz);
+		//sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 
 	for(int i = 0; i < nb_bin; i++)
