@@ -548,15 +548,15 @@ double Tree_ApproxPot(const TNoeud root, const Part *part, const double soft)
 
 #ifdef PERIODIC
 #	ifdef __bool_true_false_are_defined
-/*inline*/ bool Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
+inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
 #	else
-/*inline*/ int Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
+inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
 #	endif
 #else
 #	ifdef __bool_true_false_are_defined
-/*inline*/ bool Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept)
 #	else
-/*inline*/ int Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept)
 #	endif
 #endif
 {

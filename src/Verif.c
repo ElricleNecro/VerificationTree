@@ -560,6 +560,16 @@ int main(int argc, char **argv)
 				//"CREATE TABLE IF NOT EXISTS particule (id INT, type INT, x REAL, y REAL, z REAL, vx REAL, vy REAL, vz REAL)",
 				"BEGIN TRANSACTION",
 				},
+	     delete[][1024] = { "DELETE FROM id_simu WHERE id=%d",
+				"DELETE FROM masse WHERE id=%d",
+				"DELETE FROM densite WHERE id=%d",
+				"DELETE FROM densite_log WHERE id=%d",
+				"DELETE FROM distribution WHERE id=%d",
+				"DELETE FROM energie WHERE id=%d",
+				"DELETE FROM potentiel WHERE id=%d",
+				"DELETE FROM Movement WHERE id=%d",
+				"DELETE FROM timeparam WHERE id=%d",
+				}
 	     tampon[1024] = {0};
 	int nb_table      = sizeof(create)/sizeof(create[0]),
 	    id            = get_id(filename);
@@ -585,10 +595,26 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	/*
+	 * On crée les tables n'existant pas :
+	 */
 	for(int i = 0; i < nb_table; i++)
 	{
 		sqlite3_exec(conn, create[i], NULL, NULL, NULL);
 	}
+
+	/*
+	 * On efface les données correspondantes à l'ID du snapshot :
+	 */
+	for(int i = 0; i < nb_table; i++)
+	{
+		snprintf(tampon, 1024*sizeof(char), delete[i], id);
+		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
+	}
+
+	/*
+	 * Insertion des données dans la base SQLite :
+	 */
 	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id);
 	//printf("::%s::\n", tampon);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
