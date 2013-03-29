@@ -520,7 +520,7 @@ int main(int argc, char **argv)
 	// Calcul de la densité :
 	densite             = CalcDensite(root, nb_bin, dr, rmax);
 	//densite             = Dens(root, nb_bin, dr, rmax);
-	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, /*rayon[NbPart/2]*/1.0);
+	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, rayon[NbPart/2]/*1.0*/);
 	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
 	Deltatemp           = CalcTemperature(root, nb_bin, dr, rmax, &Tmoy);
@@ -548,7 +548,7 @@ int main(int argc, char **argv)
 	 *						Enregistrement des données							*
 	\********************************************************************************************************************************/
 #ifdef USE_SQLITE3
-	char create[][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT)",
+	char create[][1024] = { "CREATE TABLE IF NOT EXISTS id_simu (nom TEXT PRIMARY KEY, id INT, time REAL)",
 				"CREATE TABLE IF NOT EXISTS masse (id INT, type INT, r REAL, m REAL)",
 				"CREATE TABLE IF NOT EXISTS densite (id INT, type INT, bin_rg REAL, rho REAL, t REAL, aniso REAL)",
 				"CREATE TABLE IF NOT EXISTS densite_log (id INT, type INT, bin_rg REAL, l_densite REAL)",
@@ -569,7 +569,7 @@ int main(int argc, char **argv)
 				"DELETE FROM potentiel WHERE id=%d",
 				"DELETE FROM Movement WHERE id=%d",
 				"DELETE FROM timeparam WHERE id=%d",
-				}
+				},
 	     tampon[1024] = {0};
 	int nb_table      = sizeof(create)/sizeof(create[0]),
 	    id            = get_id(filename);
@@ -615,7 +615,7 @@ int main(int argc, char **argv)
 	/*
 	 * Insertion des données dans la base SQLite :
 	 */
-	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id);
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id, simu_time);
 	//printf("::%s::\n", tampon);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
@@ -664,7 +664,7 @@ int main(int argc, char **argv)
 	sqlite3_exec(conn, "END TRANSACTION", NULL, NULL, NULL);
 
 	sqlite3_close(conn);
-#else
+#ifdef USE_FILE
 	FILE   *fich   = NULL;
 
 	printf("\033[32mÉcriture du fichier : %s\n", "Masse.dat");
@@ -816,9 +816,9 @@ int main(int argc, char **argv)
 	fclose(fich);
 #endif
 
-printf("%s\n", database);
 	free(timeparam);
 #ifdef USE_SQLITE3
+	printf("%s\n", database);
 	free(database);
 #endif
 	Tree_Free(root);

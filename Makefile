@@ -53,6 +53,7 @@ DEBUG+=-DUSE_STRUCT_PART
 #DEBUG+=-DTREE_CALCPOT_DEBUG_
 #!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
 #DEBUG+=-DUSE_NEWDISTCALC
+DEBUG+=USE_FILE
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
@@ -78,6 +79,8 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
       -ffloat-store -Wunreachable-code -Wwrite-strings \
       $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC) -g3
 #-ggdb -Wmissing-declarations
+#-fsanitize=address
+#-floop-nest-optimize
 
 LINK=-lm
 LFLAG=-L $$HOME/.local/lib $(LINK) $(shell pkg-config --libs sqlite3)
@@ -162,24 +165,38 @@ all-single:$(EXEC)
 all:$(EXEC) $(EXEC2)
 
 $(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN) Makefile
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $< -o $@
 
 $(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2) Makefile
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $< -o $@
 
 tree_create.o:tree_create.c tree.h
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $<
 
 tree_voisin.o:tree_voisin.c tree.h
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $<
 
 $(OBJDIR)/%.o:$(SRCDIR)/%.c $(INCDIR)/$(HEA) Makefile
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $< -o $@
 
 $(EXEC):$(OBJDIR)/$(MAIN:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mBuilding " $@ "\033[00m"
 	$(CC) $(CFLAG) $(LFLAG) $^ -o $@ $(LINK)
 
 $(EXEC2):$(OBJDIR)/$(MAIN2:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
+	@echo -e "\033[32m----------------------------------------------------------\033[00m"
+	@echo -e "\033[31mBuilding " $@ "\033[00m"
 	$(CC) $(CFLAG) $(LFLAG) $^ -o $@ $(LINK)
 
 test_temp:
