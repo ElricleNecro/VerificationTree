@@ -53,7 +53,7 @@ DEBUG+=-DUSE_STRUCT_PART
 #DEBUG+=-DTREE_CALCPOT_DEBUG_
 #!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
 #DEBUG+=-DUSE_NEWDISTCALC
-DEBUG+=USE_FILE
+DEBUG+=-DUSE_FILE
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
@@ -77,9 +77,9 @@ CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
       -Wredundant-decls \
       -Wnested-externs \
       -ffloat-store -Wunreachable-code -Wwrite-strings \
+      -fsanitize=address \
       $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC) -g3
 #-ggdb -Wmissing-declarations
-#-fsanitize=address
 #-floop-nest-optimize
 
 LINK=-lm
@@ -94,10 +94,10 @@ LFLAG=-L $$HOME/.local/lib $(LINK) $(shell pkg-config --libs sqlite3)
 #!
 PREFIX=$$HOME/.local/
 
-SRCDIR=src/
-INCDIR=include/
-OBJDIR=build/
-EXECDIR=build/
+SRCDIR=src
+INCDIR=include
+OBJDIR=build
+EXECDIR=build
 
 #!|-----------------------------------------------------|
 #!|		Variables d'Éxecutable			|
