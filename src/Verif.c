@@ -561,14 +561,14 @@ int main(int argc, char **argv)
 				"BEGIN TRANSACTION",
 				},
 	     delete[][1024] = { "DELETE FROM id_simu WHERE id=%d",
-				"DELETE FROM masse WHERE id=%d",
-				"DELETE FROM densite WHERE id=%d",
-				"DELETE FROM densite_log WHERE id=%d",
-				"DELETE FROM distribution WHERE id=%d",
-				"DELETE FROM energie WHERE id=%d",
-				"DELETE FROM potentiel WHERE id=%d",
-				"DELETE FROM Movement WHERE id=%d",
-				"DELETE FROM timeparam WHERE id=%d",
+				"DELETE FROM masse WHERE id=%d AND type=%d",
+				"DELETE FROM densite WHERE id=%d AND type=%d",
+				"DELETE FROM densite_log WHERE id=%d AND type=%d",
+				"DELETE FROM distribution WHERE id=%d AND type=%d",
+				"DELETE FROM energie WHERE id=%d AND type=%d",
+				"DELETE FROM potentiel WHERE id=%d AND type=%d",
+				"DELETE FROM Movement WHERE id=%d AND type=%d",
+				"DELETE FROM timeparam WHERE id=%d AND type=%d",
 				},
 	     tampon[1024] = {0};
 	int nb_table      = sizeof(create)/sizeof(create[0]),
@@ -599,23 +599,21 @@ int main(int argc, char **argv)
 	 * On crée les tables n'existant pas :
 	 */
 	for(int i = 0; i < nb_table; i++)
-	{
 		sqlite3_exec(conn, create[i], NULL, NULL, NULL);
-	}
 
 	/*
 	 * On efface les données correspondantes à l'ID du snapshot :
 	 */
-	for(int i = 0; i < nb_table; i++)
+	for(int i = 0; i < sizeof(delete)/sizeof(delete[0]); i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), delete[i], id);
+		snprintf(tampon, 1024*sizeof(char), delete[i], id, type);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 
 	/*
 	 * Insertion des données dans la base SQLite :
 	 */
-	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d)", "id_simu", filename, id, simu_time);
+	snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(\"%s\", %d, %g)", "id_simu", filename, id, simu_time);
 	//printf("::%s::\n", tampon);
 	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
@@ -664,6 +662,7 @@ int main(int argc, char **argv)
 	sqlite3_exec(conn, "END TRANSACTION", NULL, NULL, NULL);
 
 	sqlite3_close(conn);
+#endif
 #ifdef USE_FILE
 	FILE   *fich   = NULL;
 
