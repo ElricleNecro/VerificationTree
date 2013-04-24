@@ -205,7 +205,11 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 	//int ind = 1000 * header.npart[type];
 	for (int i = 1, j = 0; i <= npart && j < header.npart[type]; i++)
 	{
-		if(P[i].Type == type)
+#ifdef OLDWAY
+		if( (P[i].Type == type) )
+#else
+		if( (1 << P[i].Type) & type )
+#endif
 		{
 			part[j].x  = P[i].Pos[0] * PosFact;
 			part[j].y  = P[i].Pos[1] * PosFact;
