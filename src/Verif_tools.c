@@ -5,7 +5,11 @@
 #ifdef __DEBUG_VOIS_LOG
 Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS, const char * fname)
 #else
+#ifdef PERIODIC
 Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS)
+#else
+Part MoreDenseParticule(const TNoeud root, const int NbVois)
+#endif
 #endif
 {
 	Part *Vois  = NULL;
@@ -157,7 +161,11 @@ Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, co
 #ifdef __DEBUG_VOIS_LOG
 	Center         = MoreDenseParticule(root, NbVois, BoxSize, "debug_vois_recentre.log");
 #else
+#ifdef PERIODIC
 	Center         = MoreDenseParticule(root, NbVois, BoxSize);
+#else
+	Center         = MoreDenseParticule(root, NbVois);
+#endif
 #endif
 
 #ifdef TEST_VOISIN_LOG_SHUFFLE
@@ -644,7 +652,7 @@ void     CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, co
 #endif
 }
 
-double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, const double rmax, double *Tmoy)
+double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, double *Tmoy)
 {
 	double *temperature = NULL,
 	       *Deltatemp   = NULL;
@@ -710,11 +718,11 @@ double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, c
 	return Deltatemp;
 }
 
-double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, const double G, double *distrib)
+double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, double *distrib)
 {
 	int NbPart  = root->N,
 	    *nb     = NULL;
-	double Jdr  = 0.0,
+	double /*Jdr  = 0.0,*/
 	       *Jac = NULL,
 	       rmax = maxdouble2d(potentiel, NbPart, 0),
 	       dr   = rmax / NbBin;
@@ -798,7 +806,7 @@ double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_
 	return Jac;
 }
 
-double*  CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, const double rmax, double *Coeff)
+double*  CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, double *Coeff)
 {
 	double *aniso = NULL,
 	       *vr    = NULL,

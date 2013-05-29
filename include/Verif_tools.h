@@ -15,7 +15,11 @@
 #ifdef __DEBUG_VOIS_LOG
 Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS, const char * fname);
 #else
+#ifdef PERIODIC
 Part MoreDenseParticule(const TNoeud root, const int NbVois, const double BS);
+#else
+Part MoreDenseParticule(const TNoeud root, const int NbVois);
+#endif
 #endif
 Part ReCentre(TNoeud root, Part *posvits, const int NbPart, const int NbVois, const int NbMin, const double BoxSize);
 
@@ -131,7 +135,7 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
  * @param[out] *Tmoy Température moyenne.
  * @return Tableau contenant le profil de Température.
  */
-double* CalcTemperature(const TNoeud root, const int nb_bin, const double dr, const double rmax, double *Tmoy);
+double* CalcTemperature(const TNoeud root, const int nb_bin, const double dr, double *Tmoy);
 
 /**
  * Fonction calculant la distribution en énergie et le Jacobien permettant la transformation de \f$f(\vec{x}, \vec{p})\f$ vers \f$f(E)\f$.
@@ -146,7 +150,7 @@ double* CalcTemperature(const TNoeud root, const int nb_bin, const double dr, co
  * @param[in] G Constante gravitationnelle.
  * @param[out] *distrib Distribution en énergie
  */
-double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, const double G, double *distrib);
+double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, double *distrib);
 
 /**
  * Fonction calculant le profil de densité de l'objet.
@@ -158,7 +162,7 @@ double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t
  * @param[out] *Coeff Anisotropie totale de l'objet.
  * @return Tableau contenant le profil de Densité.
  */
-double* CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, const double rmax, double *Coeff);
+double* CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, double *Coeff);
 
 /**
  * Retourne le maximum entre 3 paramètres
