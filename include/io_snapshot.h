@@ -44,7 +44,7 @@ typedef struct particle_data* Particle;
  */
 //int load_snapshot(char *fname, int files);
 //Particule load_snapshot(char *fname, int files, int *NbPart, int *Ngas, int *uudouble *tps);
-Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Ngas, double *tps, IO_Header *header1);
+Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Ngas, IO_Header *header1);
 
 //Part* read_snapshot(const char *fname, const int files, const int type, int *NbPart);
 //Part* read_snapshot(const char *fname, const int files, const int type, int *NbPart, double *time);
