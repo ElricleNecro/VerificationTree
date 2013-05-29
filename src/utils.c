@@ -19,7 +19,7 @@ char* get_first_match(const char *str_regex, const char *str)
 {
 	regex_t preg;
 	regmatch_t *pmatch = NULL;
-	
+
 	//Compilation de l'expression réguliére :
 	if( regcomp(&preg, str_regex, REG_EXTENDED) != 0 )
 	{
@@ -27,7 +27,7 @@ char* get_first_match(const char *str_regex, const char *str)
 		regfree(&preg);
 		return NULL;
 	}
-	
+
 	//Allocation du tableau contenant les résultats de l'expression :
 	if( (pmatch = malloc(sizeof(*pmatch) * preg.re_nsub)) == NULL )
 	{
@@ -35,10 +35,10 @@ char* get_first_match(const char *str_regex, const char *str)
 		regfree(&preg);
 		return NULL;
 	}
-	
+
 	//On applique l'expression :
 	int res = regexec (&preg, str, preg.re_nsub, pmatch, 0);
-	
+
 	//Si on ne trouve aucun motif correspondant :
 	if( res == REG_NOMATCH )
 	{
@@ -76,13 +76,13 @@ char* get_first_match(const char *str_regex, const char *str)
 		regfree(&preg);
 		exit(EXIT_FAILURE);
 	}
-	
+
 	strncpy (site, &str[start], size);
 	site[size] = '\0';
 
 	free(pmatch);
 	regfree(&preg);
-	
+
 	return site;
 }
 
@@ -90,16 +90,17 @@ int get_id(const char *filename)
 {
 	int start = 0;
 	char str_regex[] = "([[:digit:]]+)$", *site = NULL;
-	
+
 	site = get_first_match(str_regex, filename);
 	if( site == NULL )
 		return -1;
+
 	while(site[start] != '0')
 		start++;
 	int ind = atoi(&site[start]);
-	
+
 	free (site);
-	
+
 	return ind;
 }
 
