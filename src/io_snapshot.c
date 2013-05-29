@@ -1,13 +1,12 @@
 #include "io_snapshot.h"
 
-Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Ngas, double *tps, IO_Header *header2)
+Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Ngas, IO_Header *header2)
 {
 	FILE *fd;
 	char buf[200];
-	double Time;
 	int i, k, dummy, ntot_withmasses;
 	int n, pc, pc_new, pc_sph;
-	int NumPart, *Id;
+	int NumPart = 0, *Id = NULL;
 	Particle P = NULL;
 	IO_Header header1;
 
@@ -155,7 +154,6 @@ Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Nga
 	}
 
 
-	*tps = Time = header1.time;
 	//Redshift = header1.time;
 
 	//int ind = NumPart * 1000;
@@ -168,7 +166,7 @@ Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Nga
 	//printf("Indice : %d\n", ind);
 
 	*header2 = header1;
-	*NbPart = NumPart;
+	*NbPart  = NumPart;
 
 	Id++;
 	free(Id);
@@ -183,7 +181,8 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 	IO_Header header;
 	int npart, NbGas;
 
-	P = load_snapshot(fname, files, &npart, &NbGas, time, &header);
+	P = load_snapshot(fname, files, &npart, &NbGas, &header);
+	*time = header.time;
 
 	printf("Type : %d\n", type);
 	printf("\033[33m%d particules de masse %g à lire dans : %s\033[00m\n", header.npart[4], header.mass[4], fname);
