@@ -6,7 +6,7 @@
 
 static int Level_Max = 50;
 static int NB_bro = 8;
-static int Zc = 0;
+//static int Zc = 0;
 static double G = 6.67e-11;
 //#define NEAREST(x, boxhalf, boxsize) (((x)>boxhalf)?((x)-boxsize):(((x)<-boxhalf)?((x)+boxsize):(x)))
 
