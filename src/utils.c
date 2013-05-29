@@ -218,7 +218,7 @@ void double1d_libere(double *ptf)
 	return ;
 }
 
-int maxlocdouble1d(const double * x, const int n)
+int maxlocdouble1d(double * x, const int n)
 {
 	double tmp;
 	int imax;
@@ -234,7 +234,7 @@ int maxlocdouble1d(const double * x, const int n)
 	return imax;
 }
 
-double maxdouble2d(const double **tab, const int NbPart, const int col)
+double maxdouble2d(double **tab, const int NbPart, const int col)
 {
 	double max = tab[0][col];
 	for(int i=1; i<NbPart; i++)
@@ -243,7 +243,7 @@ double maxdouble2d(const double **tab, const int NbPart, const int col)
 	return max;
 }
 
-int minlocdouble1d(const double * x, const int n)
+int minlocdouble1d(double * x, const int n)
 {
 	double tmp;
 	int imax;

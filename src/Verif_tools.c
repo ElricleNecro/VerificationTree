@@ -625,7 +625,7 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
 	return res;
 }
 
-void     CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, const double **potentiel, double *Ectot, double *Eptot)
+void     CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, double **potentiel, double *Ectot, double *Eptot)
 {
 	FILE *fich = NULL;
 	fich = fopen("log_ener.log", "w");
@@ -718,7 +718,7 @@ double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, d
 	return Deltatemp;
 }
 
-double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, double *distrib)
+double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, double **potentiel, const double Emin, const double Emax, const double dE, double *distrib)
 {
 	int NbPart  = root->N,
 	    *nb     = NULL;

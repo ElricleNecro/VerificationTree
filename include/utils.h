@@ -18,13 +18,13 @@ float* float1d(const int n);
 void float1d_libere(float *ptf);
 double* double1d(const int n);
 void double1d_libere(double *ptf);
-int maxlocdouble1d(const double * x, int n);
-int minlocdouble1d(const double * x, int n);
+int maxlocdouble1d(double * x, int n);
+int minlocdouble1d(double * x, int n);
 
 double ** double2d(const int nlignes, const int mcolonnes);
 void double2d_libere(double ** mat);
 
-double maxdouble2d(const double **tab, const int NbPart, const int col);
+double maxdouble2d(double **tab, const int NbPart, const int col);
 
 void lissage(double *tab, const int N);
 char *remove_ext(const char* mystr);

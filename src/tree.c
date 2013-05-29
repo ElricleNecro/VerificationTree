@@ -246,7 +246,6 @@ TNoeud tmp_Build2(TNoeud root, int NbPart, int bro)
 		default:
 			fprintf(stderr, "\033[31m%s::Erreur : %d n'est pas prévu.\033[00m\n", __func__, bro);
 			exit(EXIT_FAILURE);
-			break;
 	}
 
 	t1         = Tree_Init( NbPart,
@@ -548,15 +547,15 @@ double Tree_ApproxPot(const TNoeud root, const Part *part, const double soft)
 
 #ifdef PERIODIC
 #	ifdef __bool_true_false_are_defined
-inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
+inline bool Tree_Accept(const TNoeud root, const Part * part, const double accept, const double BS)
 #	else
-inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept, const double BS)
+inline int Tree_Accept(const TNoeud root, const Part * part, const double accept, const double BS)
 #	endif
 #else
 #	ifdef __bool_true_false_are_defined
-inline bool Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+inline bool Tree_Accept(const TNoeud root, const Part * part, const double accept)
 #	else
-inline int Tree_Accept(const TNoeud root, const Part const * part, const double accept)
+inline int Tree_Accept(const TNoeud root, const Part * part, const double accept)
 #	endif
 #endif
 {

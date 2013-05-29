@@ -205,7 +205,7 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 	for (int i = 1, j = 0; i <= npart && j < header.npart[type]; i++)
 	{
 #ifdef OLDWAY
-		if( (P[i].Type == type) )
+		if( P[i].Type == type )
 #else
 		if( (1 << P[i].Type) & type )
 #endif

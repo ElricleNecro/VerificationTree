@@ -100,7 +100,7 @@ double* CalcMasse(const TNoeud root) __attribute__ ((__const__));
  * @param[out] *Ectot Énergie cinétique totale.
  * @param[out] *Eptot Énergie potentiel totale.
  */
-void    CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, const double **potentiel, double *Ectot, double *Eptot);
+void    CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, double **potentiel, double *Ectot, double *Eptot);
 
 /**
  * Fonction calculant le profil de densité de l'objet.
@@ -150,7 +150,7 @@ double* CalcTemperature(const TNoeud root, const int nb_bin, const double dr, do
  * @param[in] G Constante gravitationnelle.
  * @param[out] *distrib Distribution en énergie
  */
-double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, const double **potentiel, const double Emin, const double Emax, const double dE, double *distrib);
+double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, double **potentiel, const double Emin, const double Emax, const double dE, double *distrib);
 
 /**
  * Fonction calculant le profil de densité de l'objet.

@@ -191,7 +191,6 @@ int main(int argc, char **argv)
 				case 'h':
 					usage(argv[0]);
 					exit(EXIT_SUCCESS);
-					break;
 				case 's':
 					rsoft = atof(argv[i+1]);
 					i++;
@@ -271,7 +270,6 @@ int main(int argc, char **argv)
 					fprintf(stderr, "\033[00mArgument '%s' invalide\033[00m\n", argv[i]);
 					usage(argv[0]);
 					exit(EXIT_FAILURE);
-					break;
 			}
 		}
 		else
@@ -529,14 +527,14 @@ int main(int argc, char **argv)
 	// Calcul de la température :
 	Deltatemp           = CalcTemperature(root, nb_bin, dr, &Tmoy);
 	// Calcul des énergies :
-	CalcEnergie(root, energie_c, energie_t, (const double**)potentiel, &Ec, &Ep);
+	CalcEnergie(root, energie_c, energie_t, potentiel, &Ec, &Ep);
 
 	double Emax         = energie_t[maxlocdouble1d(energie_t, NbPart - nb_hors_Ro)],
 	       Emin         = energie_t[minlocdouble1d(energie_t, NbPart - nb_hors_Ro)],
 	       dE           = (Emax - Emin) / (double)(nb_bin);
 
 	//fprintf(stderr, "\033[31mEmax :: %g ; Emin :: %g\033[00m\n", Emax, Emin);
-	Jac                 = CalcJacobien(root, nb_bin, energie_t, (const double**)potentiel, Emin, Emax, dE, distrib);
+	Jac                 = CalcJacobien(root, nb_bin, energie_t, potentiel, Emin, Emax, dE, distrib);
 
 	Aniso               = CalcAnisotropie(root, nb_bin, dr, &SAniso);
 
