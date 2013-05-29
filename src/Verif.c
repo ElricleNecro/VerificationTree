@@ -169,7 +169,8 @@ int main(int argc, char **argv)
 		rmax       = 0.0,
 		rsoft      = 0.0,
 		PosFact    = 3.086e16,
-		VitFact    = 1.0;
+		VitFact    = 1.0,
+		r_norm     = 1.0;
 	time_t  t1, t2;
 	clock_t start, finish;
 
@@ -408,11 +409,13 @@ int main(int argc, char **argv)
 		root->first[i].x  -= Center.x;
 		root->first[i].y  -= Center.y;
 		root->first[i].z  -= Center.z;
-		//root->first[i].vx -= Center.vx;
-		//root->first[i].vy -= Center.vy;
-		//root->first[i].vz -= Center.vz;
+		root->first[i].vx -= Center.vx;
+		root->first[i].vy -= Center.vy;
+		root->first[i].vz -= Center.vz;
+
 		root->first[i].r   = sqrt( pow(root->first[i].x, 2.0) + pow(root->first[i].y, 2.0) + pow(root->first[i].z, 2.0) );
-		//root->first[i].v   = sqrt( pow(root->first[i].vx, 2.0) + pow(root->first[i].vy, 2.0) + pow(root->first[i].vz, 2.0) );
+		root->first[i].v   = sqrt( pow(root->first[i].vx, 2.0) + pow(root->first[i].vy, 2.0) + pow(root->first[i].vz, 2.0) );
+
 		if( R_ori > 0.0 && root->first[i].r < R_ori )
 			NbPart--;
 	}
@@ -520,10 +523,11 @@ int main(int argc, char **argv)
 	// Calcul de la densité :
 	densite             = CalcDensite(root, nb_bin, dr, rmax);
 	//densite             = Dens(root, nb_bin, dr, rmax);
-	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, rayon[NbPart/2]/*1.0*/);
+	r_norm              = rayon[NbPart/2];
+	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, r_norm/*1.0*/);
 	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
-	Deltatemp           = CalcTemperature(root, nb_bin, dr, rmax, &Tmoy);
+	Deltatemp           = CalcTemperature(root, nb_bin, dr, &Tmoy);
 	// Calcul des énergies :
 	CalcEnergie(root, energie_c, energie_t, (const double**)potentiel, &Ec, &Ep);
 
@@ -532,9 +536,9 @@ int main(int argc, char **argv)
 	       dE           = (Emax - Emin) / (double)(nb_bin);
 
 	//fprintf(stderr, "\033[31mEmax :: %g ; Emin :: %g\033[00m\n", Emax, Emin);
-	Jac                 = CalcJacobien(root, nb_bin, energie_t, (const double**)potentiel, Emin, Emax, dE, G, distrib);
+	Jac                 = CalcJacobien(root, nb_bin, energie_t, (const double**)potentiel, Emin, Emax, dE, distrib);
 
-	Aniso               = CalcAnisotropie(root, nb_bin, dr, rmax, &SAniso);
+	Aniso               = CalcAnisotropie(root, nb_bin, dr, &SAniso);
 
 	printf("\033[36mAxial Ratio (p, g)  : %g, %g\nRapport du Viriel   : %g\nTempérature moyenne : %g\nAnisotropie de l'objet : %g\n\033[00m",
 			p_ratio,
@@ -594,6 +598,7 @@ int main(int argc, char **argv)
 		double1d_libere(Deltatemp);
 		exit(EXIT_FAILURE);
 	}
+	sqlite3_busy_timeout(conn, 60000);
 
 	/*
 	 * On crée les tables n'existant pas :
@@ -604,7 +609,7 @@ int main(int argc, char **argv)
 	/*
 	 * On efface les données correspondantes à l'ID du snapshot :
 	 */
-	for(int i = 0; i < sizeof(delete)/sizeof(delete[0]); i++)
+	for(unsigned int i = 0; i < sizeof(delete)/sizeof(delete[0]); i++)
 	{
 		snprintf(tampon, 1024*sizeof(char), delete[i], id, type);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
@@ -631,6 +636,7 @@ int main(int argc, char **argv)
 			 simu_time, p_ratio, g_ratio, 2.0*Ec/Ep, Tmoy, SAniso,
 			 rayon[(int)(NbPart * 0.1)], rayon[(int)(NbPart/2.0)], rayon[(int)(NbPart * 0.9)],
 			 TotMove.x, TotMove.y, TotMove.z, TotMove.vx, TotMove.vy, TotMove.vz);
+	sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
 	for(int i = 0; i < NbPart; i++)
 	{
@@ -835,6 +841,7 @@ int main(int argc, char **argv)
 	double1d_libere(energie_c);
 	double1d_libere(Deltatemp);
 
+	(void)G;
 	return EXIT_SUCCESS;
 }
 
