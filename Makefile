@@ -54,6 +54,8 @@ DEBUG+=-DUSE_STRUCT_PART
 #!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
 #DEBUG+=-DUSE_NEWDISTCALC
 DEBUG+=-DUSE_FILE
+#!		(x) USE OLDWAY			      : permet de donner directement le type de particule à charger plutôt qu'une puissance de 2 du type (2^type).
+DEBUG+=-DOLDWAY
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
@@ -72,18 +74,21 @@ EXTRA=
 #-pg
 INC=-I $$HOME/.local/include -I include/
 
-CFLAG=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
-      -Wcast-align -Wsign-compare -Wstrict-prototypes \
-      -Wredundant-decls \
-      -Wnested-externs \
-      -ffloat-store -Wunreachable-code -Wwrite-strings \
-      -fsanitize=address \
+CFLAG+=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
+       -Wcast-align -Wsign-compare -Wstrict-prototypes \
+       -Wredundant-decls \
+       -Wnested-externs \
+       -ffloat-store -Wunreachable-code -Wwrite-strings \
       $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC) -g3
 #-ggdb -Wmissing-declarations
 #-floop-nest-optimize
 
-LINK=-lm
-LFLAG=-L $$HOME/.local/lib $(LINK) $(shell pkg-config --libs sqlite3)
+ifeq ($(shell hostname),"Archlinux-Dell")
+	CFLAG+=-fsanitize=address
+endif
+
+LINK=-lm $(shell pkg-config --libs sqlite3)
+LFLAG=-L $$HOME/.local/lib
 
 #!|-----------------------------------------------------|
 #!|		  Variables de dossiers			|
