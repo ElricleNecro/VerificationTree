@@ -1,6 +1,7 @@
 *.o
 *.txt
 *.gz
+*.xz
 *.swp
 *.ps
 *.log
