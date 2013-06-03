@@ -135,7 +135,7 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
  * @param[out] *Tmoy Température moyenne.
  * @return Tableau contenant le profil de Température.
  */
-double* CalcTemperature(const TNoeud root, const int nb_bin, const double dr, double *Tmoy);
+double* CalcTemperature(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy);
 
 /**
  * Fonction calculant la distribution en énergie et le Jacobien permettant la transformation de \f$f(\vec{x}, \vec{p})\f$ vers \f$f(E)\f$.
@@ -171,7 +171,7 @@ double* CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, dou
  * @param c 3émes valeurs à comparer
  * @return Le maximum
  */
-double min(double a, double b, double c);
+double max(double a, double b, double c);
 
 /**
  * Retourne le minimum entre 3 paramètres
@@ -180,6 +180,6 @@ double min(double a, double b, double c);
  * @param c 3émes valeurs à comparer
  * @return Le minimum
  */
-double max(double a, double b, double c);
+double min(double a, double b, double c);
 
 #endif

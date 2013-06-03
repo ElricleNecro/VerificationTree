@@ -652,16 +652,18 @@ void     CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, do
 #endif
 }
 
-double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, double *Tmoy)
+double*  CalcTemperature(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy)
 {
 	double *temperature = NULL,
-	       *Deltatemp   = NULL;
+	       //*Deltatemp   = NULL,
+	        d_all       = 0.0;
 	int    *compteur    = NULL,
 	       ind          = 0;
+
 	*Tmoy               = 0.0;
 
 	temperature = double1d(nb_bin);
-	Deltatemp   = double1d(nb_bin);
+	//Deltatemp   = double1d(nb_bin);
 	compteur    = int1d(nb_bin);
 
 //	for(int i = 0; i < nb_bin; i++)
@@ -686,11 +688,17 @@ double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, d
 	}
 
 	for(int i = 0; i < nb_bin; i++)
-		temperature[i] /= (double)( (compteur[i] != 0)?compteur[i]:1.0 );
-	*Tmoy /= root->N;
-	for (int i = 0; i < nb_bin; i++) {
-		Deltatemp[i] = temperature[i];
+	{
+		temperature[i] *= densite[i] / ( (double)( (compteur[i] != 0)?compteur[i]:1.0 ) );
+		//temperature[i] /= (double)( (compteur[i] != 0)?compteur[i]:1.0 );
+		d_all += densite[i];
 	}
+
+	*Tmoy /= d_all;//root->N;
+
+	//for (int i = 0; i < nb_bin; i++) {
+		//Deltatemp[i] = temperature[i];
+	//}
 
 //	for(int i = 0; i < root->N; i++)
 //	{
@@ -712,10 +720,11 @@ double*  CalcTemperature(const TNoeud root, const int nb_bin, const double dr, d
 
 //	*Tmoy      = DeltaTmoy;
 
-	free(temperature);
+	//free(temperature);
 	int1d_libere(compteur);
 
-	return Deltatemp;
+	//return Deltatemp;
+	return temperature;
 }
 
 double*  CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t, double **potentiel, const double Emin, const double Emax, const double dE, double *distrib)

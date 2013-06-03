@@ -525,7 +525,7 @@ int main(int argc, char **argv)
 	LogDens             = CalcLogDensite(root, nb_bin, rayon[0]-1e3, rmax, r_norm/*1.0*/);
 	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
-	Deltatemp           = CalcTemperature(root, nb_bin, dr, &Tmoy);
+	Deltatemp           = CalcTemperature(root, densite, nb_bin, dr, &Tmoy);
 	// Calcul des énergies :
 	CalcEnergie(root, energie_c, energie_t, potentiel, &Ec, &Ep);
 
