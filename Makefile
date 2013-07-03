@@ -36,7 +36,7 @@ SQLITE3=-DUSE_SQLITE3 $(shell pkg-config --cflags sqlite3)
 DEBUG+=-DUSE_STRUCT_PART
 #!		(X) TREE_CM_BUILD                     : Active le calcul du centre de gravité en même temps que l'arbre se construit.
 #DEBUG+=-DTREE_CM_BUILD
-#!		(x) TEST_VOISIN_LOG_SHUFFLE           : Calcul une premiére fois le centre, remélange les particules et recalcul à nouveau. Si les résultats sont les mêmes, tout est bon, sinon l'arbre ou
+#!		(x) TEST_VOISIN_LOG_SHUFFLE           : Calcul une première fois le centre, re-mélange les particules et recalcul à nouveau. Si les résultats sont les mêmes, tout est bon, sinon l'arbre ou
 #!					      		l'algorithme de recherche des voisins ne fonctionne pas correctement.
 #DEBUG+=-DTEST_VOISIN_LOG_SHUFFLE
 #!		(x) TEST_INFLUENCE_MODIF_MARCHE_ARBRE : Fait deux fois de suite le calcul du centre afin de voir l'influence des itérations du calcul. Les différents résultats devraient à peine bouger.
@@ -46,16 +46,18 @@ DEBUG+=-DUSE_STRUCT_PART
 #!		(x) DOUBLE_BOUCLE                     : active le calcul des voisins en utilisant une boucle remplissant un premier tableau classé par distance à la particule test puis une boucle insérant
 #!				    			les particules de ce tableau dans le tableau des voisins.
 #DEBUG+=-DDOUBLE_BOUCLE
-#!		(x) USE_VOIS_QSORT                    : Utilise un qsort pour garder les tableaux trié laros de la recherche des voisins. Ne signifie quelque chose que si DOUBLE_BOUCLE est activé.
+#!		(x) USE_VOIS_QSORT                    : Utilise un qsort pour garder les tableaux trié lors de la recherche des voisins. Ne signifie quelque chose que si DOUBLE_BOUCLE est activé.
 #DEBUG+=-DUSE_VOIS_QSORT
 #-DP_DBG_TREECODE_P_CALC
-#!		(x) TREE_CALCPOT_DEBUG_               : Affiche des infos de déboggage du potentiel.
+#!		(x) TREE_CALCPOT_DEBUG_               : Affiche des infos de déboguage du potentiel.
 #DEBUG+=-DTREE_CALCPOT_DEBUG_
 #!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
 #DEBUG+=-DUSE_NEWDISTCALC
 DEBUG+=-DUSE_FILE
 #!		(x) USE OLDWAY			      : permet de donner directement le type de particule à charger plutôt qu'une puissance de 2 du type (2^type).
-DEBUG+=-DOLDWAY
+#DEBUG+=-DOLDWAY
+#!		(x) DBG_NEWWAY			      : quelques affichages pour déboguer le chargement des particules utilisant les bits.
+#DEBIG+=-DDBG_NEWWAY
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
