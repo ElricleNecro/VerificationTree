@@ -194,22 +194,42 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 		printf("\t\t%s : Masse %g, et %d élément%c (total : %d)\n", (i == 0)?"Gaz":( (i == 1)?"Halo":( (i == 2)?"Disk":( (i==3)?"Bulge":( (i==4)?"Stars":"Bndry" )))), header.mass[i], header.npart[i], (header.npart[i] > 1)?'s':' ', header.npartTotal[i]);
 	puts("\033[00m");
 
+#ifdef OLDWAY
+#	warning "You are using a mthods which permit you to select only one type at the time."
+	*NbPart = header.npart[i];
+#else
+	*NbPart = 0;
+	for(int i=0; i < 6; i++)
+	{
+		if( ((1 << i) & type) )
+			*NbPart += header.npart[i];
+	}
+#endif
 
-	part    = Part1d(header.npart[type]);
-	*NbPart = header.npart[type];
+	printf("%d Particules à charger.\n", *NbPart);
+
+	part    = Part1d(*NbPart); //header.npart[type]);
 	*hea    = header;
 
-	printf("%d\t%d\t%d\t%d\t%g\n", *NbPart, header.npart[type], type, npart, header.BoxSize);
+	//printf("%d\t%d\t%d\t%d\t%g\n", *NbPart, header.npart[type], type, npart, header.BoxSize);
 
 	//int ind = 1000 * header.npart[type];
-	for (int i = 1, j = 0; i <= npart && j < header.npart[type]; i++)
+	for (int i = 1, j = 0; i <= npart && j < *NbPart; i++)
 	{
+#ifdef DBG_NEWWAY
+		fprintf(stderr, "%2d %2d %2d", P[i].Type, type, (1 << P[i].Type) & type);
+#endif
 #ifdef OLDWAY
 		if( P[i].Type == type )
 #else
-		if( (1 << P[i].Type) & type )
+		if( ((1 << P[i].Type) & type) )
 #endif
 		{
+#ifndef OLDWAY
+#ifdef DBG_NEWWAY
+			fprintf(stderr, "Particule %d (type : %d, wanted : %d) selected.\n", i, P[i].Type, type);
+#endif
+#endif
 			part[j].x  = P[i].Pos[0] * PosFact;
 			part[j].y  = P[i].Pos[1] * PosFact;
 			part[j].z  = P[i].Pos[2] * PosFact;
