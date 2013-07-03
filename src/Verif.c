@@ -47,11 +47,7 @@
 #include "types.h"
 #include "cte_phys.h"
 
-#ifdef IO_PERSO
-#include "iogadget2.h"
-#else
 #include "io_snapshot.h"
-#endif
 
 #include "Verif_tools.h"
 
@@ -108,7 +104,7 @@ void usage(const char *exec)
 	        "\tFichier : Fichier de données au format Gadget 1\n"
 		"\n"
 		"\033[04mOption du programme\033[00m :\n"
-		"\t\033[35m-G \033[04mRéel\033[00m   : Valeur de G dans les unités du fichier (\033[36;03mdéfaut : 6.67e-11\033[00m). \033[31mInutile pour le moment.\033[00m\n"
+		"\t\033[35m-G \033[04mRéel\033[00m   : Valeur de G dans les unités du fichier (\033[36;03mdéfaut : 6.67384e-11\033[00m).\n"
 		"\t\033[35m-R \033[04mRéel\033[00m   : Rayon maximum souhaité, toutes les particules au-delà seront ignorées (\033[36;03mdéfaut : -1.0 => désactivé\033[00m).\n"
 		"\t\033[35m-h \033[00m       : Affiche cette aide.\n"
 		"\t\033[35m-s \033[04mRéel\033[00m   : Paramètre de lissage à utiliser (\033[36;03mdéfaut : 0.0\033[00m).\n"
@@ -123,6 +119,8 @@ void usage(const char *exec)
 		"\033[04mOption longue du programme\033[00m :\n"
 		"\t\033[35m--help      \033[00m: Affiche cette aide.\n"
 		"\t\033[35m--timeparam \033[00m: Nom du fichier de paramètre.\n"
+		"\t\033[35m--posfact   \033[00m: Unités dans lesquelles convertir les positions (\033[36;03mdéfaut : 3.086e16 (pc->m)\033[00m]]).\n"
+		"\t\033[35m--vitfact   \033[00m: Unités dans lesquelles convertir les vitesses (\033[36;03mdéfaut : 1.0\033[00m]]).\n"
 #ifdef USE_SQLITE3
 		"\t\033[35m--database  \033[00m: Nom de la base de donnée à utiliser.\n"
 #endif
@@ -345,6 +343,8 @@ int main(int argc, char **argv)
 	posvits         = read_snapshot(filename, nbfiles, type, PosFact, VitFact, &NbPart, &simu_time, &header);
 	header.BoxSize *= PosFact;
 
+	Tree_SetG(G);
+
 	if( posvits == NULL )
 		fprintf(stderr, "Erreur avec le tableau de particules !!!\n"),exit(EXIT_FAILURE);
 	NbPartOri = NbPart;
@@ -354,25 +354,29 @@ int main(int argc, char **argv)
 
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 #ifdef PERIODIC
-	#ifdef USE_TIMER
+#	ifdef USE_TIMER
 	start = clock();
 	time(&t1);
-	#endif
+#	endif
 	TotMove = ReCentre(root, posvits, NbPart, NbVois, NbMin, header.BoxSize); // * PosFact);
-	#ifdef USE_TIMER
+#	ifdef USE_TIMER
 	finish = clock();
 	time(&t2);
 	fprintf(stderr, "\033[32mTemps d'exécution de la fonction %s :: \033[33m%f (%.3f) secondes\033[00m\n", "ReCentre", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
-	#endif
+#	endif
 	printf("\033[31m%g\t%g\t%g\n\033[00m", TotMove.x, TotMove.y, TotMove.z);
-#endif
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
+#endif
 
 	rmax        = posvits[NbPart-1].r;
 	taille      = /*header.BoxSize; / */ 2.0 * posvits[NbPart-1].r;
 	root        = Tree_Init(NbPart, 0.0, 0.0, 0.0, taille);
 	if( root == NULL )
 		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
+
+#ifdef DBG_NEWWAY
+	printf("Particule la plus lointaine : %g (%g, %g, %g, %d).\n", taille, posvits[NbPart-1].x, posvits[NbPart-1].y, posvits[NbPart-1].z, posvits[NbPart-1].id);
+#endif
 
 	Save_Part("Particule-Classe.dat", posvits, NbPart);
 
