@@ -65,10 +65,10 @@ char* get_first_match(const char *str_regex, const char *str)
 		return NULL;
 	}
 
-	char *site = NULL;
-	int start = pmatch[0].rm_so;
-	int end = pmatch[0].rm_eo;
-	size_t size = end - start;
+	char  *site  = NULL;
+	int    start = pmatch[0].rm_so;
+	int    end   = pmatch[0].rm_eo;
+	size_t size  = end - start;
 
 	if( (site = malloc (sizeof (*site) * (size + 1))) == NULL )
 	{
