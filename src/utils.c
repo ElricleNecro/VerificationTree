@@ -95,9 +95,10 @@ int get_id(const char *filename)
 	if( site == NULL )
 		return -1;
 
-	while(site[start] != '0')
+	while(site[start] == '0')
 		start++;
 	int ind = atoi(&site[start]);
+	printf("%s\n", &site[start]);
 
 	free (site);
 
