@@ -42,6 +42,10 @@
 #include <sqlite3.h>
 #endif
 
+#ifdef USE_HDF5
+#include "HDF5.h"
+#endif
+
 #include "tree.h"
 #include "utils.h"
 #include "types.h"
@@ -124,6 +128,9 @@ void usage(const char *exec)
 #ifdef USE_SQLITE3
 		"\t\033[35m--database  \033[00m: Nom de la base de donnée à utiliser.\n"
 #endif
+#ifdef USE_HDF5
+		"\t\033[35m--hdf5  \033[00m: Nom du fichier hdf5 à utiliser.\n"
+#endif
 		"\n"
 		"\033[04mÀ venir\033[00m :\n"
 		"\t- Support du type de fichier Gadget 2.\n"
@@ -155,6 +162,10 @@ int main(int argc, char **argv)
 		periodic   = false*/;
 	char   *filename   = NULL,
 	       *timeparam  = NULL
+#ifdef USE_HDF5
+             , *hdf5file   = NULL
+	     , *w_ext      = NULL
+#endif
 #ifdef USE_SQLITE3
 	     , *database   = NULL
 #endif
@@ -235,6 +246,13 @@ int main(int argc, char **argv)
 						strncpy(timeparam, argv[i+1], strlen(argv[i+1]));
 						i++;
 					}
+#ifdef USE_HDF5
+					else if( !strcmp("--hdf5", argv[i]) )
+					{
+						hdf5file = argv[i+1];
+						i++;
+					}
+#endif
 #ifdef USE_SQLITE3
 					else if( !strcmp("--database", argv[i]) )
 					{
@@ -290,6 +308,10 @@ int main(int argc, char **argv)
 		}
 		strncpy(timeparam, "TimeParam.dat", 20);
 	}
+#ifdef USE_HDF5
+	if( hdf5file == NULL )
+		hdf5file = "simu.h5";
+#endif
 #ifdef USE_SQLITE3
 	if( database == NULL )
 	{
@@ -642,13 +664,16 @@ int main(int argc, char **argv)
 
 	for(int i = 0; i < NbPart; i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "masse", id, type, rayon[i], masse[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)",
+			"masse", id, type, rayon[i], masse[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)", "energie", id, type, posvits[i].r, energie_c[i], potentiel[i][1], energie_t[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)",
+			"energie", id, type, posvits[i].r, energie_c[i], potentiel[i][1], energie_t[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "potentiel", id, type, potentiel[i][0], potentiel[i][1]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)",
+			"potentiel", id, type, potentiel[i][0], potentiel[i][1]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
 		//snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "particule", id, type, posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].vx, posvits[i].vy, posvits[i].vz);
@@ -657,19 +682,143 @@ int main(int argc, char **argv)
 
 	for(int i = 0; i < nb_bin; i++)
 	{
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)", "densite", id, type, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g, %.14g, %.14g)",
+			"densite", id, type, (i+1.0)*dr, densite[i], Deltatemp[i], Aniso[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "densite_log", id, type, LogDens[i][0], LogDens[i][1]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)",
+			"densite_log", id, type, LogDens[i][0], LogDens[i][1]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 
-		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)", "distribution", id, type, Emin + (i+1.0)*dE, distrib[i]);
+		snprintf(tampon, 1024*sizeof(char), "INSERT INTO %s VALUES(%d, %d, %.14g, %.14g)",
+			"distribution", id, type, Emin + (i+1.0)*dE, distrib[i]);
 		sqlite3_exec(conn, tampon, NULL, NULL, NULL);
 	}
 
 	sqlite3_exec(conn, "END TRANSACTION", NULL, NULL, NULL);
 
 	sqlite3_close(conn);
+#endif
+#ifdef USE_HDF5
+	double *tmp = NULL;
+	double virtmp = 2.0*Ec/Ep;
+	hid_t grp, file = H5Fcreate(hdf5file, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	hsize_t size[2] = {1, 1};
+	w_ext = remove_ext(filename);
+
+	char       *tab = NULL;
+	int         tN  = strlen(w_ext) + 6 + strlen("densite_log");
+	tab             = malloc(tN*sizeof(char));
+
+	snprintf(tab, tN, "/%s", w_ext);
+	printf("%s\n", tab);
+	grp             = H5Gcreate(file, tab, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	/****************************************************************************************\
+	 *			Saving time dependant parameter 				*
+	\****************************************************************************************/
+	snprintf(tab, tN, "/%s/%s", w_ext, "timeparam");
+
+	ExtensibleDataSet eds = CreateExtensibleDS(file, tab, size);
+	ExtensibleDataSet_Extend(eds, &simu_time, size);
+	ExtensibleDataSet_Extend(eds, &p_ratio, size);
+	ExtensibleDataSet_Extend(eds, &g_ratio, size);
+	ExtensibleDataSet_Extend(eds, &virtmp, size);
+	ExtensibleDataSet_Extend(eds, &Ec, size);
+	ExtensibleDataSet_Extend(eds, &Ep, size);
+	ExtensibleDataSet_Extend(eds, &Tmoy, size);
+	ExtensibleDataSet_Extend(eds, &SAniso, size);
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.1)], size);
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.5)], size);
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.9)], size);
+	ExtensibleDataSet_Extend(eds, &TotMove.x, size);
+	ExtensibleDataSet_Extend(eds, &TotMove.y, size);
+	ExtensibleDataSet_Extend(eds, &TotMove.z, size);
+	ExtensibleDataSet_Extend(eds, &TotMove.vx, size);
+	ExtensibleDataSet_Extend(eds, &TotMove.vy, size);
+	ExtensibleDataSet_Extend(eds, &TotMove.vz, size);
+	ExtensibleDataSet_Close(eds);
+
+	/****************************************************************************************\
+	 *			Saving density profile + other quantity				*
+	\****************************************************************************************/
+	size[0] = nb_bin;
+	snprintf(tab, tN, "/%s/%s", w_ext, "densite");
+
+	eds = CreateExtensibleDS(file, tab, size);
+	if( (tmp = double1d(nb_bin)) == NULL )
+	{
+		perror("Allocation problem:");
+		exit(EXIT_FAILURE);
+	}
+	for(int i = 0; i < nb_bin; i++)
+	{
+		tmp[i] = (i+1.0)*dr;
+	}
+	ExtensibleDataSet_Extend(eds, tmp, size);
+	free(tmp);
+	ExtensibleDataSet_Extend(eds, densite, size);
+	ExtensibleDataSet_Extend(eds, Deltatemp, size);
+	ExtensibleDataSet_Extend(eds, Aniso, size);
+	ExtensibleDataSet_Close(eds);
+
+	/****************************************************************************************\
+	 *			Saving log density profile + other quantity			*
+	\****************************************************************************************/
+	size[1] = 2;
+	snprintf(tab, tN, "/%s/%s", w_ext, "densite_log");
+
+	eds = CreateExtensibleDS(file, tab, size);
+	ExtensibleDataSet_Extend(eds, LogDens[0], size);
+	ExtensibleDataSet_Close(eds);
+
+	/****************************************************************************************\
+	 *			Saving mass profile + other quantity				*
+	\****************************************************************************************/
+	size[0] = NbPart;
+	size[1] = 1;
+	snprintf(tab, tN, "/%s/%s", w_ext, "masse");
+
+	eds = CreateExtensibleDS(file, tab, size);
+	ExtensibleDataSet_Extend(eds, rayon, size);
+	ExtensibleDataSet_Extend(eds, masse, size);
+	ExtensibleDataSet_Close(eds);
+
+	/****************************************************************************************\
+	 *			Saving energy profile + other quantity				*
+	\****************************************************************************************/
+	snprintf(tab, tN, "/%s/%s", w_ext, "energie");
+
+	eds = CreateExtensibleDS(file, tab, size);
+	if( (tmp = double1d(NbPart)) == NULL )
+	{
+		perror("Allocation problem:");
+		exit(EXIT_FAILURE);
+	}
+	for(int i = 0; i < NbPart; i++)
+	{
+		tmp[i] = posvits[i].r;
+	}
+	ExtensibleDataSet_Extend(eds, tmp, size);
+	free(tmp);
+	ExtensibleDataSet_Extend(eds, energie_c, size);
+	ExtensibleDataSet_Extend(eds, energie_t, size);
+	ExtensibleDataSet_Close(eds);
+
+	/****************************************************************************************\
+	 *			Saving potential profile + other quantity			*
+	\****************************************************************************************/
+	size[1] = 2;
+	snprintf(tab, tN, "/%s/%s", w_ext, "potentiel");
+
+	eds = CreateExtensibleDS(file, tab, size);
+	ExtensibleDataSet_Extend(eds, potentiel[0], size);
+	ExtensibleDataSet_Close(eds);
+
+	H5Gclose(grp);
+	H5Fclose(file);
+	free(tab);
+	free(w_ext);
 #endif
 #ifdef USE_FILE
 	FILE   *fich   = NULL;
@@ -825,7 +974,6 @@ int main(int argc, char **argv)
 
 	free(timeparam);
 #ifdef USE_SQLITE3
-	printf("%s\n", database);
 	free(database);
 #endif
 	Tree_Free(root);
