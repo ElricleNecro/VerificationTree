@@ -27,6 +27,11 @@ TIMER=-DUSE_TIMER
 #!	Valeur par défaut : -DUSE_SQLITE3
 SQLITE3=-DUSE_SQLITE3 $(shell pkg-config --cflags sqlite3)
 
+#!HDF5 :
+#!	Utilisation du système de fichier HDF5 pour l'enregistrement
+#!	Valeur par défaut : -DUSE_HDF5 -lhdf5
+HDF5=-DUSE_HDF5
+
 #!DEBUG :
 #!	Flag de Debug à passer au compilateur.
 #!
@@ -81,7 +86,7 @@ CFLAG+=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
        -Wredundant-decls \
        -Wnested-externs \
        -ffloat-store -Wunreachable-code -Wwrite-strings \
-      $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(EXTRA) $(INC) -g3
+      $(DEBUG) $(DBGFLAG) $(TIMER) $(SQLITE3) $(HDF5) $(EXTRA) $(INC) -g3
 #-ggdb -Wmissing-declarations
 #-floop-nest-optimize
 
@@ -89,7 +94,7 @@ ifeq ($(shell hostname),"Archlinux-Dell")
 	CFLAG+=-fsanitize=address
 endif
 
-LINK=-lm $(shell pkg-config --libs sqlite3)
+LINK=-lm $(shell pkg-config --libs sqlite3) -lhdf5
 LFLAG=-L $$HOME/.local/lib
 
 #!|-----------------------------------------------------|
@@ -133,7 +138,7 @@ MAIN2=BruteForce.c
 ifeq ($(IOPERSO),1)
 SRC=Verif_tools.c tree.c iogadget2.c utils.c types.c
 else
-SRC=Verif_tools.c tree.c utils.c types.c io_snapshot.c
+SRC=Verif_tools.c tree.c utils.c types.c io_snapshot.c HDF5.c
 endif
 
 SRC_TREE=#tree_create.c tree_voisin.c
