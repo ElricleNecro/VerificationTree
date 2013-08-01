@@ -615,7 +615,7 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
 
 	for (int i = 0; i < NbBin; i++)
 	{
-		res[i][0] = lr[i+1];
+		res[i][0] = pow(10., lr[i+1]);
 		res[i][1] = densite[i] * root->first[0].m / cte / (4.0 * PI * rnorm*rnorm*rnorm *log(10.0)*pow(10.0, 3.0*lr[i+1]));
 	}
 
