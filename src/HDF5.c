@@ -29,6 +29,7 @@ ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *sub_grp, hsize_t dims
 	new->file      = id;
 	new->offset[0] = 0;
 	new->offset[1] = 0;
+	new->incremente= false;
 
 	H5Sclose(dsp);
 
@@ -38,7 +39,10 @@ ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *sub_grp, hsize_t dims
 void ExtensibleDataSet_Extend(ExtensibleDataSet id, const double *data, hsize_t dims[2])
 {
 	// On étend l'espace alloué au dataset :
-	id->size[1]     += dims[1];
+	if( id->incremente || id->size[1] < dims[1] )
+		id->size[1]     += dims[1];
+	else
+		id->incremente = true;
 	herr_t status    = H5Dextend(id->dataset, id->size);
 	// On récupère les infos sur l'espace nouvellement alloué :
 	hid_t  filespace = H5Dget_space(id->dataset);

@@ -2,10 +2,12 @@
 #define VERIF_HDF5
 
 #include <hdf5.h>
+#include <stdbool.h>
 
 typedef struct _ExtensibleDataSet {
 	hsize_t size[2], offset[2];
 	hid_t dataset, file, grp;
+	bool incremente;
 } *ExtensibleDataSet;
 
 //ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *name, const char *sub_grp, const int lig, const int col);
