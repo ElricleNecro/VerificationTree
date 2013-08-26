@@ -700,18 +700,28 @@ int main(int argc, char **argv)
 	sqlite3_close(conn);
 #endif
 #ifdef USE_HDF5
+	int str_start = -1;
 	double *tmp = NULL;
 	double virtmp = 2.0*Ec/Ep;
 	hid_t grp, file = H5Fcreate(hdf5file, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 	hsize_t size[2] = {1, 1};
-	w_ext = remove_ext(filename);
+
+	for(int i = strlen(filename)-1; i >= 0 && filename[i] != '/'; i--)
+	{
+		str_start = i;
+	}
+
+	if( str_start < 0 || str_start >= strlen(filename) )
+		str_start = 0;
+
+	w_ext = remove_ext(&filename[str_start]);
 
 	char       *tab = NULL;
 	int         tN  = strlen(w_ext) + 6 + strlen("densite_log");
 	tab             = malloc(tN*sizeof(char));
 
 	snprintf(tab, tN, "/%s", w_ext);
-	printf("%s\n", tab);
+	printf("Hdf5 :: %s\n", tab);
 	grp             = H5Gcreate(file, tab, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	/****************************************************************************************\
