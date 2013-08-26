@@ -696,9 +696,10 @@ double*  CalcTemperature(const TNoeud root, const double *densite, const int nb_
 
 	*Tmoy /= d_all;//root->N;
 
-	//for (int i = 0; i < nb_bin; i++) {
+	for (int i = 0; i < nb_bin; i++) {
 		//Deltatemp[i] = temperature[i];
-	//}
+		temperature[i] /= d_all;
+	}
 
 //	for(int i = 0; i < root->N; i++)
 //	{
