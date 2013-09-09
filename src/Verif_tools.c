@@ -615,7 +615,7 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
 
 	for (int i = 0; i < NbBin; i++)
 	{
-		res[i][0] = lr[i+1];
+		res[i][0] = pow(10., lr[i+1]);
 		res[i][1] = densite[i] * root->first[0].m / cte / (4.0 * PI * rnorm*rnorm*rnorm *log(10.0)*pow(10.0, 3.0*lr[i+1]));
 	}
 
@@ -696,10 +696,13 @@ double*  CalcTemperature(const TNoeud root, const double *densite, const int nb_
 
 	*Tmoy /= d_all;//root->N;
 
+	*Tmoy = 0.0;
 	for (int i = 0; i < nb_bin; i++) {
 		//Deltatemp[i] = temperature[i];
+		*Tmoy += temperature[i];
 		temperature[i] /= d_all;
 	}
+	*Tmoy /= d_all;//root->N;
 
 //	for(int i = 0; i < root->N; i++)
 //	{
