@@ -156,6 +156,15 @@ void   Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part);
 #endif
 
 /**
+ * Fonction cherchant toutes les particules se trouvant dans un volume donnée autour d'une particules.
+ * @param root Nœud racine à partir duquel parcourir l'arbre.
+ * @param part Particule dont on cherche les voisins.
+ * @param array Tableau contenant les voisins.
+ * @param dmax Rayon de la sphère dans laquelle chercher des voisins.
+ */
+void Tree_VolumeVoisin(TNoeud root, const Part *part, VolVois *array, const double dmax);
+
+/**
  * Fonction sauvegardant l'arbre dans un fichier.
  * @param root noeud à partir duquel commencer l'enregistrement
  * @param fich pointeur vers le fichier à écrire
