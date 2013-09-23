@@ -616,7 +616,8 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
 	for (int i = 0; i < NbBin; i++)
 	{
 		res[i][0] = pow(10., lr[i+1]);
-		res[i][1] = densite[i] * root->first[0].m / cte / (4.0 * PI * rnorm*rnorm*rnorm *log(10.0)*pow(10.0, 3.0*lr[i+1]));
+		res[i][1] = densite[i] * root->first[0].m / cte /
+			(4.0 * PI * rnorm*rnorm*rnorm * log(10.0)*pow(10.0, 3.0*lr[i+1]));
 	}
 
 	double1d_libere(densite);
@@ -984,6 +985,90 @@ double*  CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, do
 	double1d_libere(vpn);
 
 	return aniso;
+}
+
+int FoF_FindFather(int *grp, int Id)
+{
+	while( Id != grp[Id] )
+		Id = grp[Id];
+	return Id;
+}
+
+int FoF_FindFather_compression(int *grp, int Id)
+{
+	int id_f = FoF_FindFather(grp, Id);
+	while( Id != id_f )
+	{
+		int tmp = grp[Id];
+		grp[Id] = id_f;
+		Id      = tmp;
+	}
+
+	return id_f;
+}
+
+void FoF_PonderateUnion(int *grp, int *nbgrp, int x, int y)
+{
+	int x_f = FoF_FindFather_compression(grp, x),
+	    y_f = FoF_FindFather_compression(grp, y);
+
+	if( x_f == y_f )
+		return ;
+
+	if( nbgrp[x_f] > nbgrp[y_f] )
+	{
+		grp[y_f] = x_f;
+		nbgrp[x_f] += nbgrp[y_f];
+	}
+	else
+	{
+		grp[x_f] = y_f;
+		nbgrp[y_f] += nbgrp[x_f];
+	}
+}
+
+void FoF(TNoeud root, const int NbPart, double dmax)
+{
+	int *grp = NULL;
+	int *nbgrp = NULL;
+	VolVois *vois = NULL;
+
+	if( (grp = malloc(NbPart*sizeof(int))) == NULL )
+	{
+		perror("Alloc error: ");
+		exit(EXIT_FAILURE);
+	}
+
+	grp--;
+
+	for(int i=0; i<NbPart; i++)
+		grp[i] = i;
+
+	if( (nbgrp = calloc(NbPart, sizeof(int))) == NULL )
+	{
+		perror("Alloc error: ");
+		exit(EXIT_FAILURE);
+	}
+	nbgrp--;
+
+	for (int i = 0; i < NbPart; i++)
+	{
+		VolVois_New(vois);
+
+		Tree_VolumeVoisin(root, &root->first[i], vois, dmax);
+
+		for(unsigned int j=0; j<vois->size; j++)
+			FoF_PonderateUnion(grp, nbgrp, root->first[i].id, vois->part[j]->id);
+		VolVois_Free(vois);
+	}
+
+	for(int i=0; i<NbPart; i++)
+		FoF_FindFather_compression(grp, i+1);
+
+	grp++;
+	free(grp);
+	nbgrp++;
+	free(nbgrp);
 }
 
 /**
