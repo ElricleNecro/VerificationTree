@@ -513,6 +513,53 @@ void Tree_Voisin(TNoeud root, Part *Tab, int NbVois, const Part *part)
 	return ;
 }
 
+void FillVois(TNoeud root, VolVois *array, const Part *part, const double dmax)
+{
+	for(int i=0; i<root->N; i++)
+	{
+		//Distance entre les 2 particules :
+		double r =	(root->first[i].x - part->x)*(root->first[i].x - part->x) +
+				(root->first[i].y - part->y)*(root->first[i].y - part->y) +
+				(root->first[i].z - part->z)*(root->first[i].z - part->z);
+		//Si elle est dans le volume souhaitez :
+		if( r < dmax*dmax )
+		{
+			//Avons-nous besoin de réallouer :
+			if( array->size >= array->cap )
+				array->part = realloc(array->part, array->cap + 10);
+
+			//On ajoute la particule dans le tableau :
+			array->part[array->size] = &root->first[i];
+			//On incrémente le nombre d'élément contenu :
+			array->size++;
+
+			//On met à jour le champs farest :
+			if( array->farest*array->farest < r )
+				array->farest = sqrt(r);
+		}
+	}
+}
+
+void Tree_VolumeVoisin(TNoeud root, const Part *part, VolVois *array, const double dmax)
+{
+	//Le cube est plus loin que ce que nous souhaitons :
+	if( Tree_Dist(root, part) > dmax )
+		return ;
+
+	//Il y a un fils, on descend dedans :
+	if( root->fils != NULL )
+	{
+		//On parcours les voisins avec un appel récursif :
+		for(TNoeud t1 = root->fils; t1 != NULL; t1 = t1->frere)
+			Tree_VolumeVoisin(t1, part, array, dmax);
+	}
+	//Il n'y en a aucun :
+	else
+	{
+		//On rempli le tableau avec ce que l'on peut :
+		FillVois(root, array, part, dmax);
+	}
+}
 
 double Tree_ExactPot(const TNoeud root, const Part *part, const double soft)
 {
