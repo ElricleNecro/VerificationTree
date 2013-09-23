@@ -165,6 +165,22 @@ double* CalcJacobien(const TNoeud root, const int NbBin, const double *energie_t
 double* CalcAnisotropie(const TNoeud root, const int NbBin, const double dr, double *Coeff);
 
 /**
+ */
+int FoF_FindFather(int *grp, int Id);
+
+/**
+ */
+int FoF_FindFather_compression(int *grp, int Id);
+
+/**
+ */
+void FoF_PonderateUnion(int *grp, int *nbgrp, int x, int y);
+
+/**
+ */
+void FoF(TNoeud root, const int NbPart, double dmax);
+
+/**
  * Retourne le maximum entre 3 paramètres
  * @param a 1éres valeurs à comparer
  * @param b 2nde valeurs à comparer
