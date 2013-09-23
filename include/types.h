@@ -83,4 +83,27 @@ int    qsort_partaxe(const void *a, const void *b) __attribute__ ((__const__));
  */
 void   Echange(Part *a, Part *b);
 
+/**
+ * \struct VolVois
+ * Structure contenant tout les infos nécessaires sur les particules contenues dans la sphère de rayon `farest`.
+ */
+typedef struct _vois_vol {
+	Part **part;	/*< Tableau de particule contenu dans la sphère.*/
+	size_t size;	/*< Nombre d'éléments contenu dans la sphère.*/
+	size_t cap;	/*< Nombre d'éléments pouvant être stocké avant de devoir faire une ré-allocation.*/
+	double farest;	/*< Distance de la particule la plus lointaine.*/
+} VolVois;
+
+/**
+ * Allocation de la structure.
+ * @param pointeur à allouer.
+ */
+void VolVois_New(VolVois *new);
+
+/**
+ * Libération de la structure.
+ * @param pointeur à libérer.
+ */
+void VolVois_Free(VolVois *this);
+
 #endif /* end of include guard: TYPES_H */

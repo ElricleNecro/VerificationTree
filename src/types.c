@@ -89,4 +89,18 @@ void Echange(Part *a, Part *b)
 // */
 }
 
+void VolVois_New(VolVois *new)
+{
+	new->cap = 10;
+	new->size = 0;
+	new->farest = 0.;
+	new->part = malloc(new->cap*sizeof(Part*));
+}
+
+void VolVois_Free(VolVois *this)
+{
+	this->size = 0;
+	this->cap = 0;
+	free(this->part);
+}
 
