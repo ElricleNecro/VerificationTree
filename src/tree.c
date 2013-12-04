@@ -273,7 +273,10 @@ TNoeud tmp_Build2(TNoeud root, int NbPart, int bro)
 int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 {
 	if( root->level >= Level_Max )
+	{
+		fprintf(stderr, "Maximum level reach!");
 		return 0;
+	}
 
 	int Nb_use = 0,
 	    bro    = 0;
@@ -327,6 +330,7 @@ int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 	if( Nb_use != NbPart )
 	{
 		fprintf(stderr, "\033[31m%s::Erreur :: Toute les particules n'ont pas été prise au niveau %d (%d au lieu de %d)!!!\033[00m\n", __func__, root->level, Nb_use, NbPart);
+		fprintf(stderr, "\033[35m\-> Particules (%g, %g, %g, %d).\033[00m\n", root->first[Nb_use].x, root->first[Nb_use].y, root->first[Nb_use].z, root->first[Nb_use].id);
 		exit(EXIT_FAILURE);
 	}
 
@@ -526,7 +530,10 @@ void FillVois(TNoeud root, VolVois *array, const Part *part, const double dmax)
 		{
 			//Avons-nous besoin de réallouer :
 			if( array->size >= array->cap )
-				array->part = realloc(array->part, array->cap + 10);
+			{
+				array->cap += 10;
+				array->part = realloc(array->part, sizeof(Part*)*array->cap);
+			}
 
 			//On ajoute la particule dans le tableau :
 			array->part[array->size] = &root->first[i];
