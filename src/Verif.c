@@ -42,6 +42,8 @@
 #include <sqlite3.h>
 #endif
 
+#include <octree.h>
+
 #ifdef USE_HDF5
 #include "HDF5.h"
 #endif
@@ -97,7 +99,17 @@ void Save_Part(const char * const fn, const Part * const posvits, const int NbPa
 		exit(EXIT_FAILURE);
 	}
 	for(int i      = 0; i<NbPart; i++)
-		fprintf(fich, "%g %g %g %g %g %g %g %g %d\n", posvits[i].x, posvits[i].y, posvits[i].z, posvits[i].r, posvits[i].vx, posvits[i].vy, posvits[i].vz, posvits[i].v, posvits[i].id);
+		fprintf(fich, "%g %g %g %g %g %g %g %g %d\n",
+				posvits[i].x,
+				posvits[i].y,
+				posvits[i].z,
+				posvits[i].r,
+				posvits[i].vx,
+				posvits[i].vy,
+				posvits[i].vz,
+				posvits[i].v,
+				posvits[i].id
+		);
 	fclose(fich);
 }
 
@@ -123,14 +135,19 @@ void usage(const char *exec)
 		"\033[04mOption longue du programme\033[00m :\n"
 		"\t\033[35m--help      \033[00m: Affiche cette aide.\n"
 		"\t\033[35m--timeparam \033[00m: Nom du fichier de paramètre.\n"
-		"\t\033[35m--posfact   \033[00m: Unités dans lesquelles convertir les positions (\033[36;03mdéfaut : 3.086e16 (pc->m)\033[00m]]).\n"
-		"\t\033[35m--vitfact   \033[00m: Unités dans lesquelles convertir les vitesses (\033[36;03mdéfaut : 1.0\033[00m]]).\n"
+		"\t\033[35m--posfact   \033[00m: Unités dans lesquelles convertir les positions (\033[36;03mdéfaut : 3.086e16 (pc->m)\033[00m).\n"
+		"\t\033[35m--vitfact   \033[00m: Unités dans lesquelles convertir les vitesses (\033[36;03mdéfaut : 1.0\033[00m).\n"
+#ifdef ACTIVATE_FoF
+		"\t\033[35m--linking-length\033[00m : Rayon de la sphère dans laquelle chercher les voisins pour le FoF.\n"
+		"\t\033[35m--nmin      \033[00m: Nombre de particules minimum pour faire un groupe.\n"
+#endif
 #ifdef USE_SQLITE3
 		"\t\033[35m--database  \033[00m: Nom de la base de donnée à utiliser.\n"
 #endif
 #ifdef USE_HDF5
 		"\t\033[35m--hdf5  \033[00m: Nom du fichier hdf5 à utiliser.\n"
 #endif
+		"\t\033[35m--correct-id\033[00m: Corriger le bug des Id (les type 4 et 5 commençant au même Id).\n"
 		"\n"
 		"\033[04mÀ venir\033[00m :\n"
 		"\t- Support du type de fichier Gadget 2.\n"
@@ -157,13 +174,16 @@ int main(int argc, char **argv)
 	        nb_bin     = 100,
 		nb_hors_Ro = 0,
 		nbfiles    = 1,
-		type       = 4;
+		type       = 4,
+		N_min      = 300;
 	bool    gc         = false/*,
-		periodic   = false*/;
+		periodic   = false*/
+		,CorrectId = false
+		;
 	char   *filename   = NULL,
 	       *timeparam  = NULL
 #ifdef USE_HDF5
-             , *hdf5file   = NULL
+	     , *hdf5file   = NULL
 	     , *w_ext      = NULL
 #endif
 #ifdef USE_SQLITE3
@@ -179,7 +199,8 @@ int main(int argc, char **argv)
 		rsoft      = 0.0,
 		PosFact    = 3.086e16,
 		VitFact    = 1.0,
-		r_norm     = 1.0;
+		r_norm     = 1.0,
+		Opt_Length = 0.01;
 	time_t  t1, t2;
 	clock_t start, finish;
 
@@ -270,11 +291,27 @@ int main(int argc, char **argv)
 						PosFact = atof(argv[i+1]);
 						i++;
 					}
+					else if( !strcmp("--correct-id", argv[i]) )
+					{
+						CorrectId = true;
+					}
 					else if( !strcmp("--vitfact", argv[i]) )
 					{
 						VitFact = atof(argv[i+1]);
 						i++;
 					}
+#ifdef ACTIVATE_FoF
+					else if( !strcmp("--linking-length", argv[i]) )
+					{
+						Opt_Length = atof(argv[i+1]);
+						i++;
+					}
+					else if( !strcmp("--nmin", argv[i]) )
+					{
+						N_min = atoi(argv[i+1]);
+						i++;
+					}
+#endif
 					else
 					{
 						fprintf(stderr, "\033[00mArgument '%s' invalide\033[00m\n", argv[i]);
@@ -323,14 +360,6 @@ int main(int argc, char **argv)
 		strncpy(database, "simu.db", 20);
 	}
 #endif
-	if( theta < 0.0 )
-	{
-		if( NbPart <= 1000 )
-			theta = 0.0;
-		else
-			theta = 0.5;
-	}
-
 	printf("Option du programme :\n");
 	for (int i = 0; i < argc; i++) {
 		printf("\t%d :: %s\n", i, argv[i]);
@@ -362,11 +391,116 @@ int main(int argc, char **argv)
 
 	Tree_var(50);
 
-	posvits         = read_snapshot(filename, nbfiles, type, PosFact, VitFact, &NbPart, &simu_time, &header);
+	posvits         = read_snapshot(filename, nbfiles, type, PosFact, VitFact, &NbPart, &simu_time, &header, CorrectId);
 	header.BoxSize *= PosFact;
+	if( theta < 0.0 )
+	{
+		if( NbPart <= 1000 )
+			theta = 0.0;
+		else
+			theta = 0.5;
+	}
 
+
+	Part_SortById(posvits, NbPart);
+
+#ifdef ACTIVATE_FoF
+	//-----------------------------
+	OcTree_data *Tree=NULL;
+	float *pos = NULL;
+	float min[3] = {0., 0., 0.};
+	float max[3] = {header.BoxSize, header.BoxSize, header.BoxSize};
+	int  *fof_id = NULL;
+	group_list *glist;
+
+	pos = malloc(3*NbPart*sizeof(float));
+	for(int i=0, j=0; j<NbPart; j++)
+	{
+		pos[i] = posvits[j].x;
+		i++;
+		pos[i] = posvits[j].y;
+		i++;
+		pos[i] = posvits[j].z;
+		i++;
+	}
+#ifdef DEBUG_FOF
+	for(int i = 0; i < 9; i++)
+	{
+		printf("%g ", pos[i]);
+		if( (i+1)%3 == 0 )
+			printf("\n");
+	}
+#endif
+
+	Tree = BuildNeiTree(pos, NbPart, 1, min, max, 3, 100);
+
+	BuildFoF(Tree, Opt_Length, &fof_id, 0); //Opt_Periodic);
+
+	FreeOctDataKeepId(Tree);
+
+	glist = ComputeGroupsFromArrays(fof_id, N_min, Opt_Length, NULL, NULL, NbPart, max, 3, 0);
+
+	printf("%d\n", glist->NGroups);
+	printf("\t%d\n", glist->group[0].N);
+
+	printf("Copying... ");
+	// Exploiter glist->group[O]
+	Part *tmp_posvits = NULL;
+	if( (tmp_posvits = malloc(glist->group[0].N*sizeof(Part))) == NULL )
+		fprintf(stderr, "Erreur avec le tableau temporaire de particules !!!\n"),exit(EXIT_FAILURE);
+
+	for(int i=0; i<glist->group[0].N; i++)
+	{
+		memcpy(&tmp_posvits[i], &posvits[glist->group[0].index[i]], sizeof(Part));
+	}
+
+	//for(int j=0; j<NbPart; j++)
+		//for(int i=0; i<glist->group[0].N; i++)
+			//if( ((unsigned int)glist->group[0].index[i]) == (posvits[j].id))// - 1) )
+			//{
+//#ifndef __FoF_NOPROGRESSBAR_P
+				//printf("Copying %d to %d / %d\r", j, i, glist->group[0].N);
+//#endif
+				//memcpy(&tmp_posvits[i], &posvits[j], sizeof(Part));
+				////printf("%g --> %g\n", posvits[j].m, tmp_posvits[i].m);
+			//}
+	printf("done!\n");
+
+#ifdef DEBUG_FOF
+	{
+		FILE *tmp_file = fopen("fof.tmp", "w");
+		for(int j=0; j<glist->group[0].N; j++)
+			fprintf(tmp_file, "%d\n", glist->group[0].index[j]);
+		fclose(tmp_file);
+	}
+#endif
+
+	free(posvits);
+	NbPart  = glist->group[0].N;
+	posvits = tmp_posvits;
+	printf("%d, %d ---- %g %g %g %g", NbPart, glist->group[0].N, posvits[0].x, tmp_posvits[0].x, posvits[0].y, tmp_posvits[0].y);
+	printf("%d, %d ---- %g %g %g %g", NbPart, glist->group[0].N, posvits[NbPart-1].x, tmp_posvits[NbPart-1].x, posvits[NbPart-1].y, tmp_posvits[NbPart-1].y);
+
+#ifdef DEBUG_FOF
+	{
+		FILE *tmp_file = fopen("particule_fof.tmp", "w");
+		/*for(int j=0; j<NbPart; j++)*/
+		for(int j=0; j<glist->group[0].N; j++)
+			fprintf(tmp_file, "%g %g %g %d\n", tmp_posvits[j].x, tmp_posvits[j].y, tmp_posvits[j].z, tmp_posvits[j].id);
+		fclose(tmp_file);
+	}
+#endif
+	FreeGroupList(glist);
+	free(fof_id),fof_id=NULL;
+
+	printf("End FoF!\n");
+#endif //ACTIVATE_FoF
+
+	//-----------------------------
 	Tree_SetG(G);
 
+
+	//-----------------------------
 	if( posvits == NULL )
 		fprintf(stderr, "Erreur avec le tableau de particules !!!\n"),exit(EXIT_FAILURE);
 	NbPartOri = NbPart;
@@ -390,8 +524,11 @@ int main(int argc, char **argv)
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 #endif
 
+	qsort(posvits, (size_t)NbPartOri, sizeof(Part), qsort_partstr);
+	printf("rmax :: %g\n", posvits[NbPart-1].r);
 	rmax        = posvits[NbPart-1].r;
-	taille      = /*header.BoxSize; / */ 2.0 * posvits[NbPart-1].r;
+	taille      = /*header.BoxSize; / */ 3.0 * rmax;
+	printf("taille :: %g\n", taille);
 	root        = Tree_Init(NbPart, 0.0, 0.0, 0.0, taille);
 	if( root == NULL )
 		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
@@ -444,10 +581,11 @@ int main(int argc, char **argv)
 			NbPart--;
 	}
 	TotMove = Part_add(Center, TotMove);
+	fprintf(stderr, "Density Center calculated!");
 
 	Tree_Free(root), root = NULL;
 
-	qsort(posvits, (size_t)NbPartOri, sizeof(Part), qsort_partstr);
+	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 
 	if( R_ori > 0.0 )
 	{
@@ -461,7 +599,8 @@ int main(int argc, char **argv)
 		printf("Nouveau Maximum :: %g\n", posvits[NbPart-1].r);
 
 	rmax        = posvits[NbPart-1].r;
-	taille      = 2.0 * posvits[NbPart-1].r;
+	/*taille      = 2.0 * posvits[NbPart-1].r;*/
+	taille      = /*header.BoxSize; / */ 3.0 * rmax;
 	root        = Tree_Init(NbPart, 0.0, 0.0, 0.0, taille/*2.0 * posvits[NbPart-1].r*/);
 	if( root == NULL )
 		fprintf(stderr, "Erreur avec Tree_Init !!!\n"),exit(EXIT_FAILURE);
@@ -533,6 +672,7 @@ int main(int argc, char **argv)
 	time(&t2);
 	fprintf(stderr, "\033[32mTemps d'exécution de la fonction potentiel :: \033[33m%f (%.3f) secondes\033[00m\n", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
 #endif
+	fprintf(stderr, "Potential calculated!");
 
 	/********************************************************************************************************************************\
 	 *				Calcul des fonctions de masses, densités et énergies						*
@@ -730,23 +870,23 @@ int main(int argc, char **argv)
 	snprintf(tab, tN, "/%s/%s", w_ext, "timeparam");
 
 	ExtensibleDataSet eds = CreateExtensibleDS(file, tab, size);
-	ExtensibleDataSet_Extend(eds, &simu_time, size);
-	ExtensibleDataSet_Extend(eds, &p_ratio, size);
-	ExtensibleDataSet_Extend(eds, &g_ratio, size);
-	ExtensibleDataSet_Extend(eds, &virtmp, size);
-	ExtensibleDataSet_Extend(eds, &Ec, size);
-	ExtensibleDataSet_Extend(eds, &Ep, size);
-	ExtensibleDataSet_Extend(eds, &Tmoy, size);
-	ExtensibleDataSet_Extend(eds, &SAniso, size);
-	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.1)], size);
-	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.5)], size);
-	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.9)], size);
-	ExtensibleDataSet_Extend(eds, &TotMove.x, size);
-	ExtensibleDataSet_Extend(eds, &TotMove.y, size);
-	ExtensibleDataSet_Extend(eds, &TotMove.z, size);
-	ExtensibleDataSet_Extend(eds, &TotMove.vx, size);
-	ExtensibleDataSet_Extend(eds, &TotMove.vy, size);
-	ExtensibleDataSet_Extend(eds, &TotMove.vz, size);
+	ExtensibleDataSet_Extend(eds, &simu_time, size);                  // 0
+	ExtensibleDataSet_Extend(eds, &p_ratio, size);                    // 1
+	ExtensibleDataSet_Extend(eds, &g_ratio, size);                    // 2
+	ExtensibleDataSet_Extend(eds, &virtmp, size);                     // 3
+	ExtensibleDataSet_Extend(eds, &Ec, size);                         // 4
+	ExtensibleDataSet_Extend(eds, &Ep, size);                         // 5
+	ExtensibleDataSet_Extend(eds, &Tmoy, size);                       // 6
+	ExtensibleDataSet_Extend(eds, &SAniso, size);                     // 7
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.1)], size); // 8
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.5)], size); // 9
+	ExtensibleDataSet_Extend(eds, &rayon[(int)(NbPart * 0.9)], size); // 10
+	ExtensibleDataSet_Extend(eds, &TotMove.x, size);                  // 11
+	ExtensibleDataSet_Extend(eds, &TotMove.y, size);                  // 12
+	ExtensibleDataSet_Extend(eds, &TotMove.z, size);                  // 13
+	ExtensibleDataSet_Extend(eds, &TotMove.vx, size);                 // 14
+	ExtensibleDataSet_Extend(eds, &TotMove.vy, size);                 // 15
+	ExtensibleDataSet_Extend(eds, &TotMove.vz, size);                 // 16
 	ExtensibleDataSet_Close(eds);
 
 	/****************************************************************************************\
