@@ -479,7 +479,6 @@ int main(int argc, char **argv)
 		fclose(tmp_file);
 	}
 #endif
-	FreeGroupList(glist);
 	free(fof_id),fof_id=NULL;
 
 	printf("End FoF!\n");
@@ -954,6 +953,17 @@ int main(int argc, char **argv)
 	ExtensibleDataSet_Extend(eds, potentiel[0], size);
 	ExtensibleDataSet_Close(eds);
 
+	/****************************************************************************************\
+	 *			Saving selected groups identities				*
+	\****************************************************************************************/
+	size[0] = glist->group[0].N;
+	size[1] = 1;
+	snprintf(tab, tN, "/%s/%s", w_ext, "ids");
+
+	eds = CreateExtensibleDS_integer(file, tab, size);
+	ExtensibleDataSet_Extend_integer(eds, glist->group[0].index, size);
+	ExtensibleDataSet_Close(eds);
+
 	H5Gclose(grp);
 	H5Fclose(file);
 	free(tab);
@@ -1129,6 +1139,10 @@ int main(int argc, char **argv)
 	double1d_libere(energie_t);
 	double1d_libere(energie_c);
 	double1d_libere(Deltatemp);
+
+#ifdef ACTIVATE_FoF
+	FreeGroupList(glist);
+#endif
 
 	(void)G;
 	return EXIT_SUCCESS;
