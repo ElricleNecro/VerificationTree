@@ -34,6 +34,7 @@ ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *sub_grp, hsize_t dims
 	H5Sclose(dsp);
 
 	return new;
+	(void)status;
 }
 
 void ExtensibleDataSet_Extend(ExtensibleDataSet id, const double *data, hsize_t dims[2])
@@ -61,6 +62,7 @@ void ExtensibleDataSet_Extend(ExtensibleDataSet id, const double *data, hsize_t 
 	// On libère la mémoire :
 	H5Sclose(filespace);
 	H5Sclose(dataspace);
+	(void)status;
 }
 
 void ExtensibleDataSet_Close(ExtensibleDataSet id)
