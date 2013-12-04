@@ -454,16 +454,6 @@ int main(int argc, char **argv)
 		memcpy(&tmp_posvits[i], &posvits[glist->group[0].index[i]], sizeof(Part));
 	}
 
-	//for(int j=0; j<NbPart; j++)
-		//for(int i=0; i<glist->group[0].N; i++)
-			//if( ((unsigned int)glist->group[0].index[i]) == (posvits[j].id))// - 1) )
-			//{
-//#ifndef __FoF_NOPROGRESSBAR_P
-				//printf("Copying %d to %d / %d\r", j, i, glist->group[0].N);
-//#endif
-				//memcpy(&tmp_posvits[i], &posvits[j], sizeof(Part));
-				////printf("%g --> %g\n", posvits[j].m, tmp_posvits[i].m);
-			//}
 	printf("done!\n");
 
 #ifdef DEBUG_FOF
@@ -484,7 +474,6 @@ int main(int argc, char **argv)
 #ifdef DEBUG_FOF
 	{
 		FILE *tmp_file = fopen("particule_fof.tmp", "w");
-		/*for(int j=0; j<NbPart; j++)*/
 		for(int j=0; j<glist->group[0].N; j++)
 			fprintf(tmp_file, "%g %g %g %d\n", tmp_posvits[j].x, tmp_posvits[j].y, tmp_posvits[j].z, tmp_posvits[j].id);
 		fclose(tmp_file);
