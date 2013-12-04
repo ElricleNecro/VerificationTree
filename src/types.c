@@ -60,6 +60,19 @@ int qsort_partaxe(const void *a, const void *b)
 		return 0;
 }
 
+int sortbyId(const void *a, const void *b)
+{
+	const Part *p1 = (const Part*)a,
+	           *p2 = (const Part*)b;
+
+	return (int)(p1->id) - (int)(p2->id);
+}
+
+void Part_SortById(Part *part, const int NbPart)
+{
+	qsort(part, NbPart, sizeof(Part), sortbyId);
+}
+
 void Echange(Part *a, Part *b)
 {
 	Part tmp;
@@ -99,8 +112,9 @@ void VolVois_New(VolVois *new)
 
 void VolVois_Free(VolVois *this)
 {
-	this->size = 0;
-	this->cap = 0;
-	free(this->part);
+	this->size   = 0;
+	this->cap    = 0;
+	this->farest = 0.;
+	free(this->part), this->part=NULL;
 }
 
