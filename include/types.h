@@ -54,6 +54,8 @@ Part* Part1d(const int n) __attribute__ ((__const__));
  */
 Part  Part_add(Part a, Part b) __attribute ((__const__));
 
+void Part_SortById(Part *part, const int NbPart);
+
 /**
  * Fonction libérant le tableau alloué par \ref Part1d.
  * @param *ptf Adresse du premier élément du tableau à désallouer;
