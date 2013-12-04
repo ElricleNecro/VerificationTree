@@ -13,6 +13,10 @@ typedef struct _ExtensibleDataSet {
 //ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *name, const char *sub_grp, const int lig, const int col);
 ExtensibleDataSet CreateExtensibleDS(hid_t id, const char *sub_grp, hsize_t dims[2]);
 void ExtensibleDataSet_Extend(ExtensibleDataSet id, const double *data, hsize_t dims[2]);
+
+ExtensibleDataSet CreateExtensibleDS_integer(hid_t id, const char *sub_grp, hsize_t dims[2]);
+void ExtensibleDataSet_Extend_integer(ExtensibleDataSet id, const double *data, hsize_t dims[2]);
+
 void ExtensibleDataSet_Close(ExtensibleDataSet id);
 
 #endif /* end of include guard */
