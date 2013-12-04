@@ -25,7 +25,7 @@ TIMER=-DUSE_TIMER
 #!SQLITE3 :
 #!	Utilisation de base de donnée plutôt que des fichiers.
 #!	Valeur par défaut : -DUSE_SQLITE3
-SQLITE3=-DUSE_SQLITE3 $(shell pkg-config --cflags sqlite3)
+#SQLITE3=-DUSE_SQLITE3 $(shell pkg-config --cflags sqlite3)
 
 #!HDF5 :
 #!	Utilisation du système de fichier HDF5 pour l'enregistrement
@@ -58,11 +58,19 @@ DEBUG+=-DUSE_STRUCT_PART
 #DEBUG+=-DTREE_CALCPOT_DEBUG_
 #!		(x) USE_NEWDISTCALC		      : Utilise : fmax( 0., fabs( root->x - part->x ) - root->cote/2.0) pour le calcule de la distance particule--cube.
 #DEBUG+=-DUSE_NEWDISTCALC
-DEBUG+=-DUSE_FILE
+#DEBUG+=-DUSE_FILE
 #!		(x) USE OLDWAY			      : permet de donner directement le type de particule à charger plutôt qu'une puissance de 2 du type (2^type).
 #DEBUG+=-DOLDWAY
 #!		(x) DBG_NEWWAY			      : quelques affichages pour déboguer le chargement des particules utilisant les bits.
-#DEBIG+=-DDBG_NEWWAY
+#DEBUG+=-DDBG_NEWWAY
+
+DEBUG+=-DACTIVATE_FoF
+DEBUG+=-D__DENSITYCENTER_NOPROGRESS_P
+DEBUG+=-D__POTENTIALCENTER_NOPROGRESS_P
+DEBUG+=-D__FoF_NOPROGRESSBAR_P
+DEBUG+=-DDEBUG_FOF
+
+#DEBUG+=-DUSE_MCHECK
 
 #!IOPERSO :
 #!	IOPERSO = 1 :Utilisation des fonctions personnelles de lecture des fichiers Gadget, plutôt que d'utiliser celles de Springel améliorer.
@@ -79,7 +87,7 @@ endif
 
 EXTRA=
 #-pg
-INC=-I $$HOME/.local/include -I include/
+INC=-I $$HOME/.local/include -I include/ -I octree/ -I /softs/hdf5/1.8.11/include
 
 CFLAG+=-std=c99 -O3 -W -Wall -Wshadow -Wcast-qual \
        -Wcast-align -Wsign-compare -Wstrict-prototypes \
@@ -94,8 +102,8 @@ ifeq ($(shell hostname),"Archlinux-Dell")
 	CFLAG+=-fsanitize=address
 endif
 
-LINK=-lm $(shell pkg-config --libs sqlite3) -lhdf5
-LFLAG=-L $$HOME/.local/lib
+LINK=-lm $(shell pkg-config --libs sqlite3) -lhdf5 -loctree
+LFLAG=-L $$HOME/.local/lib -L lib/ -L /softs/hdf5/1.8.11/lib
 
 #!|-----------------------------------------------------|
 #!|		  Variables de dossiers			|
@@ -160,6 +168,8 @@ EXEC=$(EXECDIR)/$(MAIN:.c=)
 #!
 EXEC2=$(EXECDIR)/$(MAIN2:.c=)
 
+LIB_OCT=liboctree.so
+
 #!|-----------------------------------------------------|
 #!|			Cibles				|
 #!|-----------------------------------------------------|
@@ -174,14 +184,14 @@ all-single:$(EXEC)
 #!all :
 #!	Crée à la fois l'éxecutable du projet et la version brute-force du code.
 #!
-all:$(EXEC) $(EXEC2)
+all: $(EXEC) $(EXEC2)
 
-$(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN) Makefile
+$(OBJDIR)/$(MAIN:.c=.o):$(SRCDIR)/$(MAIN) Makefile lib/$(LIB_OCT)
 	@echo -e "\033[32m----------------------------------------------------------\033[00m"
 	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $< -o $@
 
-$(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2) Makefile
+$(OBJDIR)/$(MAIN2:.c=.o):$(SRCDIR)/$(MAIN2) Makefile lib/$(LIB_OCT)
 	@echo -e "\033[32m----------------------------------------------------------\033[00m"
 	@echo -e "\033[31mCompiling " $< "\033[00m"
 	$(CC) $(CFLAG) -c $< -o $@
@@ -210,6 +220,13 @@ $(EXEC2):$(OBJDIR)/$(MAIN2:.c=.o) $(foreach x, $(OBJ), $(OBJDIR)/$(x))
 	@echo -e "\033[32m----------------------------------------------------------\033[00m"
 	@echo -e "\033[31mBuilding " $@ "\033[00m"
 	$(CC) $(CFLAG) $(LFLAG) $^ -o $@ $(LINK)
+
+lib/$(LIB_OCT):$(OBJDIR)/octree.o
+	@mkdir -p lib
+	${CC} -shared $(LFLAG) $< -o $@
+
+$(OBJDIR)/octree.o:octree/octree.c
+	$(CC) $(CFLAG) -fPIC -c $< -o $@
 
 test_temp:
 	$(CC)  $(CFLAG) ../Tree_Code/rand.c utils.c tree.c Verif_tools.c types.c test_Temp.c -o test_temp $(LFLAG)
@@ -244,6 +261,8 @@ gdb: $(EXEC)
 install:$(EXEC)
 	@mkdir -p $(PREFIX)/bin
 	@install -m 755 $(EXEC) $(PREFIX)/bin
+	@mkdir -p $(PREFIX)/lib
+	@install -m 755 lib/$(LIB_OCT) $(PREFIX)/lib
 #@mkdir -p $(PREFIX)/bin && cp $(EXEC) $(PREFIX)/bin/.
 
 ########################################################
@@ -253,7 +272,7 @@ install:$(EXEC)
 #!	Compresse les sources dans une archive tar.gz.
 #!
 tar:
-	@$(TAR) $(CTAR).$(EXTT) $(foreach x, $(SRC), $(SRCDIR)/$(x)) $(SRCDIR)/$(MAIN) $(foreach x, $(HEADERS), $(INCDIR)/$(x)) Makefile $(INCDIR)/cte_phys.h
+	@$(TAR) $(CTAR).$(EXTT) $(foreach x, $(SRC), $(SRCDIR)/$(x)) $(SRCDIR)/$(MAIN) $(foreach x, $(HEADERS), $(INCDIR)/$(x)) Makefile $(INCDIR)/cte_phys.h octree
 
 ########################################################
 #	Documentation :
