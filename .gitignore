@@ -12,3 +12,7 @@ src/test/test_get_id
 build
 test*
 Test_*
+octree/.DS_Store
+octree/.svn/*
+octree/oct_struct.h
+lib/*
