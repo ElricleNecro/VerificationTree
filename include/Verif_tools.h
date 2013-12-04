@@ -178,7 +178,7 @@ void FoF_PonderateUnion(int *grp, int *nbgrp, int x, int y);
 
 /**
  */
-void FoF(TNoeud root, const int NbPart, double dmax);
+int* FoF(TNoeud root, const int NbPart, double dmax, int *new_nb);
 
 /**
  * Retourne le maximum entre 3 paramètres

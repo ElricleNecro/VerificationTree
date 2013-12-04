@@ -1027,11 +1027,12 @@ void FoF_PonderateUnion(int *grp, int *nbgrp, int x, int y)
 	}
 }
 
-void FoF(TNoeud root, const int NbPart, double dmax)
+int* FoF(TNoeud root, const int NbPart, double dmax, int *new_nb)
 {
-	int *grp = NULL;
-	int *nbgrp = NULL;
-	VolVois *vois = NULL;
+	int *grp      = NULL;
+	int *nbgrp    = NULL;
+	int *index    = NULL;
+	VolVois vois  = {.part = NULL, .size = 0, .cap = 0, .farest = 0.};
 
 	if( (grp = malloc(NbPart*sizeof(int))) == NULL )
 	{
@@ -1041,7 +1042,7 @@ void FoF(TNoeud root, const int NbPart, double dmax)
 
 	grp--;
 
-	for(int i=0; i<NbPart; i++)
+	for(int i=1; i<=NbPart; i++)
 		grp[i] = i;
 
 	if( (nbgrp = calloc(NbPart, sizeof(int))) == NULL )
@@ -1051,24 +1052,54 @@ void FoF(TNoeud root, const int NbPart, double dmax)
 	}
 	nbgrp--;
 
+	fprintf(stderr, "% 5.1g%%\r", 0.);
 	for (int i = 0; i < NbPart; i++)
 	{
-		VolVois_New(vois);
+		VolVois_New(&vois);
 
-		Tree_VolumeVoisin(root, &root->first[i], vois, dmax);
+		Tree_VolumeVoisin(root, &root->first[i], &vois, dmax);
 
-		for(unsigned int j=0; j<vois->size; j++)
-			FoF_PonderateUnion(grp, nbgrp, root->first[i].id, vois->part[j]->id);
-		VolVois_Free(vois);
+		for(unsigned int j=0; j<vois.size; j++)
+			FoF_PonderateUnion(grp, nbgrp, root->first[i].id, vois.part[j]->id);
+
+		VolVois_Free(&vois);
+
+		fprintf(stderr, "% 5.1g%%\r", (i+1.0)/NbPart * 100.0);
 	}
+	fprintf(stderr, "\n");
 
 	for(int i=0; i<NbPart; i++)
 		FoF_FindFather_compression(grp, i+1);
 
+	for(int i=1; i<=NbPart; i++)
+		if( nbgrp[i] > 10 )
+			printf("%d :: %d\n", i, nbgrp[i]);
+
+	int indmax = 1;
+	for(int i=1; i <= NbPart; i++)
+		if( nbgrp[i] > nbgrp[indmax] )
+			indmax = i;
+
+	if( (index = calloc(nbgrp[indmax], sizeof(int))) == NULL )
+	{
+		perror("Alloc error: ");
+		exit(EXIT_FAILURE);
+	}
+
+	for(int j=0,i=1; i <= NbPart; i++)
+		if( grp[i] == indmax )
+		{
+			index[j] = i;
+		}
+
+	*new_nb = nbgrp[indmax];
+
 	grp++;
-	free(grp);
+	free(grp),grp=NULL;
 	nbgrp++;
-	free(nbgrp);
+	free(nbgrp),nbgrp=NULL;
+
+	return index;
 }
 
 /**
