@@ -174,7 +174,7 @@ Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Nga
 	return P;
 }
 
-Part* read_snapshot(const char *fname, const int files, const int type, const double PosFact, const double VitFact, int *NbPart, double *time, IO_Header *hea)
+Part* read_snapshot(const char *fname, const int files, const int type, const double PosFact, const double VitFact, int *NbPart, double *time, IO_Header *hea, bool CorrectId)
 {
 	Part* part = NULL;
 	Particle P = NULL;
@@ -240,9 +240,11 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 			part[j].vz = P[i].Vel[2] * VitFact;
 			part[j].v  = sqrt(part[j].vx*part[j].vx + part[j].vy*part[j].vy + part[j].vz*part[j].vz);
 
-			part[j].id = P[i].Id;
-			//if( P[i].Id < ind )
-			//	ind = P[i].Id;
+			if( !CorrectId )
+				part[j].id = P[i].Id;
+			else
+				part[j].id = i;
+
 			part[j].m  = P[i].Mass;
 			if(part[j].m == 0.0)
 			{
@@ -252,7 +254,6 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 			j++;
 		}
 	}
-	//printf("Indice 2 : %d\n", ind);
 
 	P++;
 	free(P);
@@ -262,7 +263,7 @@ Part* read_snapshot(const char *fname, const int files, const int type, const do
 
 Part* Deconversion(char *file_name, int *Nb)
 {
-	return read_snapshot(file_name, 1, 4, 1.0, 1.0, Nb, NULL, NULL);
+	return read_snapshot(file_name, 1, 4, 1.0, 1.0, Nb, NULL, NULL, false);
 }
 
 Particle allocate_particle_memory(const int NumPart)

@@ -1,6 +1,7 @@
 #ifndef _IOSNAPSHOT_HEADER_P
 #define _IOSNAPSHOT_HEADER_P
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -49,7 +50,7 @@ Particle load_snapshot(const char *fname, const int files, int *NbPart, int *Nga
 //Part* read_snapshot(const char *fname, const int files, const int type, int *NbPart);
 //Part* read_snapshot(const char *fname, const int files, const int type, int *NbPart, double *time);
 //Part* read_snapshot(const char *fname, const int files, const int type, const int periodic, int *NbPart, double *time, IO_Header *hea);
-Part* read_snapshot(const char *fname, const int files, const int type, const double PosFact, const double VitFact, int *NbPart, double *time, IO_Header *hea);
+Part* read_snapshot(const char *fname, const int files, const int type, const double PosFact, const double VitFact, int *NbPart, double *time, IO_Header *hea, bool CorrectId);
 
 /* this routine allocates the memory for the
  * particle data.
