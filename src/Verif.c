@@ -174,8 +174,11 @@ int main(int argc, char **argv)
 	        nb_bin     = 100,
 		nb_hors_Ro = 0,
 		nbfiles    = 1,
-		type       = 4,
-		N_min      = 300;
+		type       = 4
+#ifdef ACTIVATE_FoF
+		, N_min      = 300
+#endif
+		;
 	bool    gc         = false/*,
 		periodic   = false*/
 		,CorrectId = false
@@ -199,8 +202,11 @@ int main(int argc, char **argv)
 		rsoft      = 0.0,
 		PosFact    = 3.086e16,
 		VitFact    = 1.0,
-		r_norm     = 1.0,
-		Opt_Length = 0.01;
+		r_norm     = 1.0
+#ifdef ACTIVATE_FoF
+		, Opt_Length = 0.01
+#endif
+		;
 	time_t  t1, t2;
 	clock_t start, finish;
 
@@ -953,6 +959,7 @@ int main(int argc, char **argv)
 	ExtensibleDataSet_Extend(eds, potentiel[0], size);
 	ExtensibleDataSet_Close(eds);
 
+#ifdef ACTIVATE_FoF
 	/****************************************************************************************\
 	 *			Saving selected groups identities				*
 	\****************************************************************************************/
@@ -963,6 +970,7 @@ int main(int argc, char **argv)
 	eds = CreateExtensibleDS_integer(file, tab, size);
 	ExtensibleDataSet_Extend_integer(eds, glist->group[0].index, size);
 	ExtensibleDataSet_Close(eds);
+#endif
 
 	H5Gclose(grp);
 	H5Fclose(file);
