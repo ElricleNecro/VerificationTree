@@ -147,6 +147,10 @@ void usage(const char *exec)
 #ifdef USE_HDF5
 		"\t\033[35m--hdf5  \033[00m: Nom du fichier hdf5 à utiliser.\n"
 #endif
+#if ACTIVATE_SPHERICAL_SELECTION
+		"\t\033[35m--Rlim  \033[00m: Rayon auquel tronquer le cube sous forme de sphère.\n"
+		"\t\033[35m--selection-factor\033[00m: Facteur du rayon de troncature à utiliser pour couper tronquer le cube avant de calculer le centre.\n"
+#endif //ACTIVATE_SPHERICAL_SELECTION
 		"\t\033[35m--correct-id\033[00m: Corriger le bug des Id (les type 4 et 5 commençant au même Id).\n"
 		"\n"
 		"\033[04mÀ venir\033[00m :\n"
@@ -206,6 +210,11 @@ int main(int argc, char **argv)
 #ifdef ACTIVATE_FoF
 		, Opt_Length = 0.01
 #endif
+#if ACTIVATE_SPHERICAL_SELECTION
+		, RSelect = 35.0
+		, FSelect = 4.0
+#endif //ACTIVATE_SPHERICAL_SELECTION
+
 		;
 	time_t  t1, t2;
 	clock_t start, finish;
@@ -318,6 +327,18 @@ int main(int argc, char **argv)
 						i++;
 					}
 #endif
+#if ACTIVATE_SPHERICAL_SELECTION
+					else if( !strcmp("--Rlim", argv[i]) )
+					{
+						RSelect = atof(argv[i+1]);
+						i++;
+					}
+					else if( !strcmp("--selection-factor", argv[i]) )
+					{
+						FSelect = atof(argv[i+1]);
+						i++;
+					}
+#endif //ACTIVATE_SPHERICAL_SELECTION
 					else
 					{
 						fprintf(stderr, "\033[00mArgument '%s' invalide\033[00m\n", argv[i]);
@@ -406,6 +427,22 @@ int main(int argc, char **argv)
 		else
 			theta = 0.5;
 	}
+
+#if ACTIVATE_SPHERICAL_SELECTION
+	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
+	for(int i = NbPart; i > 0; i--)
+	{
+		if( posvits[i].r <= FSelect * RSelect )
+		{
+			NbPart--;
+		}
+	}
+	if( NbPart <= 0 )
+	{
+		fprintf(stderr, "%s::%s::%d => Erreur de sélection ! Nombre de particules après sélection : %d\n", __FILE__, __func__, __LINE__, NbPart);
+		exit(EXIT_FAILURE);
+	}
+#endif //ACTIVATE_SPHERICAL_SELECTION
 
 
 	Part_SortById(posvits, NbPart);
@@ -559,6 +596,11 @@ int main(int argc, char **argv)
 	time(&t2);
 	fprintf(stderr, "\033[32mTemps d'exécution de la fonction %sCenter :: \033[33m%f (%.3f) secondes\033[00m\n", (gc)?"Gravity":"Density", difftime(t2,t1), (double)(finish - start) / (double)CLOCKS_PER_SEC);
 #endif
+
+#if ACTIVATE_SPHERICAL_SELECTION_AFTER
+	R_ori = RSelect;
+#endif //ACTIVATE_SPHERICAL_SELECTION_AFTER
+
 	for (int i = 0; i < NbPart; i++)
 	{
 		root->first[i].x  -= Center.x;
