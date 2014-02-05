@@ -439,7 +439,7 @@ int main(int argc, char **argv)
 	}
 	if( NbPart <= 0 )
 	{
-		fprintf(stderr, "%s::%s::%d => Erreur de sélection ! Nombre de particules après sélection : %d\n", __FILE__, __func__, __LINE__, NbPart);
+		fprintf(stderr, "%s::%s::%d => Erreur de sélection ! Nombre de particules après sélection : %d (paramètres : R=%g, f=%g).\n", __FILE__, __func__, __LINE__, NbPart, RSelect, FSelect);
 		exit(EXIT_FAILURE);
 	}
 #endif //ACTIVATE_SPHERICAL_SELECTION
