@@ -330,7 +330,7 @@ int Tree_Build2(TNoeud root, int NbPart, int NbMin)
 	if( Nb_use != NbPart )
 	{
 		fprintf(stderr, "\033[31m%s::Erreur :: Toute les particules n'ont pas été prise au niveau %d (%d au lieu de %d)!!!\033[00m\n", __func__, root->level, Nb_use, NbPart);
-		fprintf(stderr, "\033[35m\-> Particules (%g, %g, %g, %d).\033[00m\n", root->first[Nb_use].x, root->first[Nb_use].y, root->first[Nb_use].z, root->first[Nb_use].id);
+		fprintf(stderr, "\033[35m-> Particules (%g, %g, %g, %d).\033[00m\n", root->first[Nb_use].x, root->first[Nb_use].y, root->first[Nb_use].z, root->first[Nb_use].id);
 		exit(EXIT_FAILURE);
 	}
 

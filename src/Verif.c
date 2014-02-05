@@ -887,7 +887,7 @@ int main(int argc, char **argv)
 		str_start = i;
 	}
 
-	if( str_start < 0 || str_start >= strlen(filename) )
+	if( str_start < 0 || str_start >= (int)strlen(filename) )
 		str_start = 0;
 
 	w_ext = remove_ext(&filename[str_start]);
