@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <tgmath.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
@@ -429,6 +430,14 @@ int main(int argc, char **argv)
 	}
 
 #if ACTIVATE_SPHERICAL_SELECTION
+	for(int i = 0; i < NbPart; i++)
+	{
+		posvits[i].x -= header.BoxSize / 2.0;
+		posvits[i].y -= header.BoxSize / 2.0;
+		posvits[i].z -= header.BoxSize / 2.0;
+		posvits[i].r  = sqrt(posvits[i].x*posvits[i].x + posvits[i].y*posvits[i].y + posvits[i].z*posvits[i].z);
+	}
+
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
 	NbPartOri = NbPart;
 	for(int i = NbPart-1; i >= 0; i--)
