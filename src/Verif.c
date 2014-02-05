@@ -430,12 +430,12 @@ int main(int argc, char **argv)
 
 #if ACTIVATE_SPHERICAL_SELECTION
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
-	for(int i = NbPart; i > 0; i--)
+	NbPartOri = NbPart;
+	for(int i = NbPart-1; i >= 0; i--)
 	{
 		if( posvits[i].r <= FSelect * RSelect )
-		{
-			NbPart--;
-		}
+			break;
+		NbPart--;
 	}
 	if( NbPart <= 0 )
 	{
