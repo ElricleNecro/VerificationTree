@@ -453,15 +453,20 @@ int main(int argc, char **argv)
 	}
 #endif //ACTIVATE_SPHERICAL_SELECTION
 
+#ifdef ACTIVATE_FoF
 
 	Part_SortById(posvits, NbPart);
 
-#ifdef ACTIVATE_FoF
 	//-----------------------------
 	OcTree_data *Tree=NULL;
 	float *pos = NULL;
+#ifndef ACTIVATE_SPHERICAL_SELECTION
 	float min[3] = {0., 0., 0.};
 	float max[3] = {header.BoxSize, header.BoxSize, header.BoxSize};
+#else
+	float min[3] = {-header.BoxSize/2., -header.BoxSize/2., -header.BoxSize/2.};
+	float max[3] = {header.BoxSize/2., header.BoxSize/2., header.BoxSize/2.};
+#endif //ACTIVATE_SPHERICAL_SELECTION
 	int  *fof_id = NULL;
 	group_list *glist;
 
@@ -496,6 +501,7 @@ int main(int argc, char **argv)
 	printf("\t%d\n", glist->group[0].N);
 
 	printf("Copying... ");
+
 	// Exploiter glist->group[O]
 	Part *tmp_posvits = NULL;
 	if( (tmp_posvits = malloc(glist->group[0].N*sizeof(Part))) == NULL )
@@ -508,14 +514,14 @@ int main(int argc, char **argv)
 
 	printf("done!\n");
 
-#ifdef DEBUG_FOF
+#	ifdef DEBUG_FOF
 	{
 		FILE *tmp_file = fopen("fof.tmp", "w");
 		for(int j=0; j<glist->group[0].N; j++)
 			fprintf(tmp_file, "%d\n", glist->group[0].index[j]);
 		fclose(tmp_file);
 	}
-#endif
+#	endif
 
 	free(posvits);
 	NbPart  = glist->group[0].N;
@@ -523,14 +529,14 @@ int main(int argc, char **argv)
 	printf("%d, %d ---- %g %g %g %g", NbPart, glist->group[0].N, posvits[0].x, tmp_posvits[0].x, posvits[0].y, tmp_posvits[0].y);
 	printf("%d, %d ---- %g %g %g %g", NbPart, glist->group[0].N, posvits[NbPart-1].x, tmp_posvits[NbPart-1].x, posvits[NbPart-1].y, tmp_posvits[NbPart-1].y);
 
-#ifdef DEBUG_FOF
+#	ifdef DEBUG_FOF
 	{
 		FILE *tmp_file = fopen("particule_fof.tmp", "w");
 		for(int j=0; j<glist->group[0].N; j++)
 			fprintf(tmp_file, "%g %g %g %d\n", tmp_posvits[j].x, tmp_posvits[j].y, tmp_posvits[j].z, tmp_posvits[j].id);
 		fclose(tmp_file);
 	}
-#endif
+#	endif
 	free(fof_id),fof_id=NULL;
 
 	printf("End FoF!\n");
@@ -621,9 +627,6 @@ int main(int argc, char **argv)
 
 		root->first[i].r   = sqrt( pow(root->first[i].x, 2.0) + pow(root->first[i].y, 2.0) + pow(root->first[i].z, 2.0) );
 		root->first[i].v   = sqrt( pow(root->first[i].vx, 2.0) + pow(root->first[i].vy, 2.0) + pow(root->first[i].vz, 2.0) );
-
-		if( R_ori > 0.0 && root->first[i].r < R_ori )
-			NbPart--;
 	}
 	TotMove = Part_add(Center, TotMove);
 	fprintf(stderr, "Density Center calculated!");
@@ -631,6 +634,22 @@ int main(int argc, char **argv)
 	Tree_Free(root), root = NULL;
 
 	qsort(posvits, (size_t)NbPart, sizeof(Part), qsort_partstr);
+	NbPartOri = NbPart;
+	if( R_ori > 0.0 )
+	{
+		for(int i = NbPart-1; i >= 0; i--)
+		{
+			if( posvits[i].r <= R_ori )
+				break;
+			NbPart--;
+		}
+
+	}
+	if( NbPart <= 0 )
+	{
+		fprintf(stderr, "%s::%s::%d => Erreur de sélection ! Nombre de particules après sélection : %d (paramètres : R=%g, f=%g).\n", __FILE__, __func__, __LINE__, NbPart, RSelect, FSelect);
+		exit(EXIT_FAILURE);
+	}
 
 	if( R_ori > 0.0 )
 	{
