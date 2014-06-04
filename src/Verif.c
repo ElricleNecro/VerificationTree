@@ -645,7 +645,7 @@ int main(int argc, char **argv)
 		}
 
 	}
-#if ACTIVATE_SPHERICAL_SELECTION_AFTER
+#ifdef ACTIVATE_SPHERICAL_SELECTION_AFTER
 	if( NbPart <= 0 )
 	{
 		fprintf(stderr, "%s::%s::%d => Erreur de sélection ! Nombre de particules après sélection : %d (paramètres : R=%g, f=%g).\n", __FILE__, __func__, __LINE__, NbPart, RSelect, FSelect);
