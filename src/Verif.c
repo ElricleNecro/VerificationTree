@@ -698,6 +698,8 @@ int main(int argc, char **argv)
 		  Ec	    = 0.0,
 		  Ep	    = 0.0,
 		  Tmoy      = 0.0,
+		  Tmoyv2    = 0.0,
+		  Tmoyv3    = 0.0,
 		  SAniso    = 0.0,
 	         *rayon     = NULL,
 		 *masse     = NULL,
@@ -708,6 +710,8 @@ int main(int argc, char **argv)
 		 *energie_c = NULL,
 		 *energie_t = NULL,
 		 *Deltatemp = NULL,
+		 *dispers   = NULL,
+		 *vdispers  = NULL,
 		 *Aniso     = NULL,
 		**potentiel = NULL,
 		**LogDens   = NULL;
@@ -758,6 +762,9 @@ int main(int argc, char **argv)
 	//printf("TOTO : %g\n", rayon[NbPart/2]);
 	// Calcul de la température :
 	Deltatemp           = CalcTemperature(root, densite, nb_bin, dr, &Tmoy);
+	dispers             = CalcTemperature_using_stats(root, densite, nb_bin, dr, &Tmoyv2);
+	vdispers            = CalcTemperature_using_stats2(root, nb_bin, dr, &Tmoyv3);
+
 	// Calcul des énergies :
 	CalcEnergie(root, energie_c, energie_t, potentiel, &Ec, &Ep);
 
@@ -953,6 +960,8 @@ int main(int argc, char **argv)
 	ExtensibleDataSet_Extend(eds, &TotMove.vx, size);                 // 14
 	ExtensibleDataSet_Extend(eds, &TotMove.vy, size);                 // 15
 	ExtensibleDataSet_Extend(eds, &TotMove.vz, size);                 // 16
+	ExtensibleDataSet_Extend(eds, &Tmoyv2, size);                     // 17
+	ExtensibleDataSet_Extend(eds, &Tmoyv3, size);                     // 18
 	ExtensibleDataSet_Close(eds);
 
 	/****************************************************************************************\
@@ -971,11 +980,13 @@ int main(int argc, char **argv)
 	{
 		tmp[i] = (i+1.0)*dr;
 	}
-	ExtensibleDataSet_Extend(eds, tmp, size);
+	ExtensibleDataSet_Extend(eds, tmp, size);		// 0
 	free(tmp);
-	ExtensibleDataSet_Extend(eds, densite, size);
-	ExtensibleDataSet_Extend(eds, Deltatemp, size);
-	ExtensibleDataSet_Extend(eds, Aniso, size);
+	ExtensibleDataSet_Extend(eds, densite, size);		// 1
+	ExtensibleDataSet_Extend(eds, Deltatemp, size);		// 2
+	ExtensibleDataSet_Extend(eds, Aniso, size);		// 3
+	ExtensibleDataSet_Extend(eds, dispers, size);		// 4
+	ExtensibleDataSet_Extend(eds, vdispers, size);		// 5
 	ExtensibleDataSet_Close(eds);
 
 	/****************************************************************************************\
