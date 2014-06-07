@@ -653,6 +653,130 @@ void     CalcEnergie(const TNoeud root, double *energie_c, double *energie_t, do
 #endif
 }
 
+double*  CalcTemperature_using_stats2(const TNoeud root, const int nb_bin, const double dr, double *Tmoy)
+{
+	double *temperature = NULL,
+	       *moyenne     = NULL,
+	       v_moy        = 0.;
+	int *compteur = NULL,
+	    ind       = 0;
+
+	*Tmoy = 0.;
+
+	temperature = double1d(nb_bin);
+	moyenne = double1d(nb_bin);
+	compteur = int1d(nb_bin);
+
+	/*
+	 * Calcul de la vitesse moyenne :
+	 */
+	for (int i = 0; i < root->N; i++)
+	{
+		ind = (int)(root->first[i].r / dr);
+		if(ind >= nb_bin)
+			ind = nb_bin - 1;
+
+		compteur[ind]++;
+		moyenne[ind] += root->first[i].v;
+		v_moy += root->first[i].v;
+	}
+
+	for (int i = 0; i < nb_bin; ++i)
+	{
+		moyenne[i] /= (double)( ( compteur[i] != 0 )? compteur[i] : 1. );
+	}
+	v_moy /= root->N;
+
+	/*
+	 * Calcul de la dispersion et de la température :
+	 */
+	for (int i = 0; i < root->N; ++i)
+	{
+		ind = (int)(root->first[i].r / dr);
+		if(ind >= nb_bin)
+			ind = nb_bin - 1;
+
+		/* compteur[ind]++; */
+		temperature[ind] += ( root->first[i].v - moyenne[ind] ) * ( root->first[i].v - moyenne[ind] );
+		*Tmoy += ( root->first[i].v - v_moy ) * ( root->first[i].v - v_moy );
+	}
+
+	for (int i = 0; i < nb_bin; ++i)
+	{
+		temperature[i] /= (double)( ( compteur[i] != 0 )? compteur[i] : 1. ) - 1.;
+	}
+	*Tmoy /= (root->N - 1.);
+
+	free(compteur);
+	free(moyenne);
+
+	return temperature;
+}
+
+double*  CalcTemperature_using_stats(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy)
+{
+	double *temperature = NULL,
+	       *moyenne     = NULL,
+	       v_moy        = 0.;
+	int *compteur = NULL,
+	    ind       = 0;
+
+	temperature = double1d(nb_bin);
+	moyenne = double1d(nb_bin);
+	compteur = int1d(nb_bin);
+	*Tmoy = 0.;
+
+	/*
+	 * Calcul de la vitesse moyenne :
+	 */
+	for (int i = 0; i < root->N; i++)
+	{
+		ind = (int)(root->first[i].r / dr);
+		if(ind >= nb_bin)
+			ind = nb_bin - 1;
+
+		compteur[ind]++;
+		moyenne[ind] += root->first[i].v;
+
+		v_moy += root->first[i].v;
+	}
+
+	for (int i = 0; i < nb_bin; ++i)
+	{
+		moyenne[i] /= (double)( ( compteur[i] != 0 )? compteur[i] : 1. );
+	}
+	v_moy /= root->N;
+
+	/*
+	 * Calcul de la dispersion et de la température :
+	 */
+	for (int i = 0; i < root->N; ++i)
+	{
+		ind = (int)(root->first[i].r / dr);
+		if(ind >= nb_bin)
+			ind = nb_bin - 1;
+
+		/* compteur[ind]++; */
+		temperature[ind] += ( root->first[i].v - moyenne[ind] ) * ( root->first[i].v - moyenne[ind] );
+
+		*Tmoy += (root->first[i].v - v_moy) * (root->first[i].v - v_moy);
+	}
+
+	for (int i = 0; i < nb_bin; ++i)
+	{
+		temperature[i] /= (double)( ( compteur[i] != 0 )? compteur[i] : 1. ) - 1.;
+		temperature[i] /= densite[i];
+	}
+
+	*Tmoy /= (root->N - 1.);
+	*Tmoy /= root->N * root->first[0].m;
+
+	free(compteur);
+	free(moyenne);
+
+	return temperature;
+}
+
 double*  CalcTemperature(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy)
 {
 	double *temperature = NULL,

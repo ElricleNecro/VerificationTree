@@ -136,6 +136,8 @@ double** CalcLogDensite(const TNoeud root, const int NbBin, const double rmin, c
  * @return Tableau contenant le profil de Température.
  */
 double* CalcTemperature(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy);
+double* CalcTemperature_using_stats(const TNoeud root, const double *densite, const int nb_bin, const double dr, double *Tmoy);
+double* CalcTemperature_using_stats2(const TNoeud root, const int nb_bin, const double dr, double *Tmoy);
 
 /**
  * Fonction calculant la distribution en énergie et le Jacobien permettant la transformation de \f$f(\vec{x}, \vec{p})\f$ vers \f$f(E)\f$.
