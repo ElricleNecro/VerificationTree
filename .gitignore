@@ -16,3 +16,4 @@ octree/.DS_Store
 octree/.svn/*
 octree/oct_struct.h
 lib/*
+.ycm_extra_conf.py*
